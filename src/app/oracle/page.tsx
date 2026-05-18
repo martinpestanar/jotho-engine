@@ -1709,27 +1709,27 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <button
             onClick={handleCloneDayToWeek}
             disabled={actionLoading !== null}
-            className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black uppercase text-[10px] tracking-widest hover:bg-indigo-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest hover:bg-indigo-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
             title="Clona la rutina completa de hoy a Lunes-Viernes"
           >
             <History className="w-4 h-4" />
-            <span>Clonar Día a L-V</span>
+            <span>Clonar L-V</span>
           </button>
           
           <button
             onClick={() => setIsEditingBlocks(!isEditingBlocks)}
-            className={`flex items-center gap-2 px-5 py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 active:scale-95 transition-all border-2 cursor-pointer ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-black uppercase text-[9px] md:text-[10px] tracking-widest hover:scale-105 active:scale-95 transition-all border-2 cursor-pointer ${
               isEditingBlocks
                 ? "bg-rose-500/20 border-rose-500/50 text-rose-400 shadow-lg shadow-rose-500/10 animate-pulse"
                 : "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
             }`}
           >
             {isEditingBlocks ? <Lock className="w-4 h-4 animate-bounce" /> : <Unlock className="w-4 h-4" />}
-            <span>{isEditingBlocks ? "Guardar Protocolo" : "Gestionar Protocolo"}</span>
+            <span>{isEditingBlocks ? "Sellar" : "Gestionar"}</span>
           </button>
         </div>
       </div>
@@ -1930,18 +1930,18 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className={`relative flex gap-10 group ${isActive ? "z-10" : "z-0"}`}
+                      className={`relative flex gap-3 md:gap-10 group ${isActive ? "z-10" : "z-0"}`}
                     >
                       {/* Timeline Connector */}
-                      <div className="flex flex-col items-center flex-shrink-0 pt-10 w-16">
-                        <div className={`w-8 h-8 rounded-full border-4 transition-all duration-700 z-10 flex items-center justify-center ${
+                      <div className="flex flex-col items-center flex-shrink-0 pt-10 w-8 md:w-16">
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-[3px] md:border-4 transition-all duration-700 z-10 flex items-center justify-center ${
                           isCompleted ? "bg-emerald-500 border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.8)]" : 
                           (isActive ? `${bTheme.accent} border-white shadow-[0_0_40px_rgba(34,211,238,0.8)]` : "bg-transparent border-slate-700")
                         }`}>
-                          {isCompleted && <CheckCircle2 className="w-4 h-4 text-white" />}
+                          {isCompleted && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
                         </div>
                         {index < (catBlocks as any[]).length - 1 && (
-                          <div className={`w-[3px] flex-1 mt-4 rounded-full ${isCompleted ? "bg-emerald-500/30" : "bg-slate-800"}`} />
+                          <div className={`w-[2px] md:w-[3px] flex-1 mt-4 rounded-full ${isCompleted ? "bg-emerald-500/30" : "bg-slate-800"}`} />
                         )}
                       </div>
 
@@ -2137,7 +2137,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                               }`}>
                                 <Icon className={`w-8 h-8 md:w-10 md:h-10 ${isActive ? "animate-pulse" : ""}`} />
                               </div>
-                              <h4 className="text-2xl md:text-3xl lg:text-4xl font-[1000] uppercase italic tracking-tighter leading-tight">
+                              <h4 className="text-xl md:text-3xl lg:text-4xl font-[1000] uppercase italic tracking-tighter leading-tight break-words">
                                 {title}
                               </h4>
                             </div>
@@ -2163,7 +2163,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                 <Sparkles className="w-6 h-6 md:w-8 md:h-8 opacity-60 animate-pulse" />
                               </div>
 
-                              <p className={`flex-1 text-base md:text-lg lg:text-xl font-[900] italic uppercase leading-relaxed tracking-tight relative z-10 ${
+                              <p className={`flex-1 text-xs md:text-lg lg:text-xl font-[900] italic uppercase leading-relaxed tracking-tight relative z-10 ${
                                 appTheme === 'dark' ? 'text-slate-200' : 'text-slate-800'
                               }`}>
                                 "{getSadhguruPhrase(title, block.category, isActive)}"
@@ -3377,8 +3377,10 @@ export default function OracleWarRoomPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
 
   const [devBypassActive, setDevBypassActive] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     if (typeof window !== 'undefined') {
       setDevBypassActive(localStorage.getItem('dev_bypass_checkin') !== 'false')
     }
@@ -3493,27 +3495,27 @@ export default function OracleWarRoomPage() {
         {theme === "dark" && <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />}
       </div>
 
-      <nav className={`fixed top-0 left-0 w-full z-40 px-4 md:px-12 py-4 md:py-10 flex justify-between items-center backdrop-blur-2xl border-b transition-all ${
+      <nav className={`fixed top-0 left-0 w-full z-40 px-4 md:px-12 py-3 md:py-8 flex justify-between items-center backdrop-blur-2xl border-b transition-all ${
         theme === "dark"
           ? "border-white/5 bg-[#0B0F1A]/80"
           : theme === "solarized"
           ? "border-orange-200/50 bg-[#FFF7ED]/90"
           : "border-slate-200 bg-white/80 shadow-md"
       }`}>
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center shadow-xl shadow-cyan-500/20">
-            <Sparkles className="w-7 h-7 text-white" />
+        <div className="flex items-center gap-3 md:gap-6">
+          <div className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center shadow-xl shadow-cyan-500/20 flex-shrink-0">
+            <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-white" />
           </div>
           <div>
-            <span className={`text-lg font-[1000] uppercase tracking-[0.4em] block leading-tight ${
+            <span className={`text-sm md:text-lg font-[1000] uppercase tracking-[0.3em] md:tracking-[0.4em] block leading-tight ${
               theme === 'solarized' ? 'text-amber-400' : 'text-cyan-500'
             }`}>ORACLE COMMAND</span>
-            <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] opacity-60 italic underline decoration-cyan-500/50">PROTOCOL v4.0 ZEN-TECH</span>
+            <span className="text-[9px] md:text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] opacity-60 italic underline decoration-cyan-500/50 hidden sm:block">PROTOCOL v4.0 ZEN-TECH</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          {typeof window !== 'undefined' && 
+        <div className="flex items-center gap-2 md:gap-5">
+          {isMounted && typeof window !== 'undefined' && 
            (window.location.hostname === 'localhost' || 
             window.location.hostname === '127.0.0.1' || 
             process.env.NODE_ENV === 'development') && (
@@ -3526,24 +3528,25 @@ export default function OracleWarRoomPage() {
                 router.push('/dashboard?bypass=true')
               }}
               title="Ir directo al Dashboard (Modo Dev)"
-              className={`flex items-center gap-2 px-4 py-3 rounded-2xl border-2 font-black uppercase text-[10px] tracking-wider transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border-2 font-black uppercase text-[8px] md:text-[10px] tracking-wider transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer ${
                 devBypassActive
                   ? "bg-amber-500/20 border-amber-500/50 text-amber-400 shadow-amber-500/10 animate-pulse"
                   : "bg-white/5 border-white/10 text-slate-500 hover:text-slate-400"
               }`}
             >
-              <Shield className={`w-4 h-4 ${devBypassActive ? 'text-amber-400 animate-pulse' : 'text-slate-500'}`} />
-              <span>Dev Bypass: {devBypassActive ? 'ACTIVO' : 'INACTIVO'}</span>
+              <Shield className={`w-3.5 h-3.5 ${devBypassActive ? 'text-amber-400 animate-pulse' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">Dev Bypass: {devBypassActive ? 'ACTIVO' : 'INACTIVO'}</span>
+              <span className="sm:hidden">Dev</span>
             </button>
           )}
 
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             {/* Dark toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={theme === 'dark' ? 'Cambiar a Light' : 'Cambiar a Dark'}
-              className={`p-3 md:p-5 rounded-2xl border transition-all hover:scale-110 ${
+              className={`p-2.5 md:p-5 rounded-2xl border transition-all hover:scale-110 ${
                 theme === 'dark'
                   ? 'bg-white/5 border-white/10 text-cyan-400'
                   : theme === 'solarized'
@@ -3551,13 +3554,13 @@ export default function OracleWarRoomPage() {
                   : 'bg-white border-slate-200 text-indigo-600 shadow-xl'
               }`}
             >
-              {theme === 'dark' ? <Sun className="w-5 h-5 md:w-7 md:h-7" /> : <Moon className="w-5 h-5 md:w-7 md:h-7" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4 md:w-7 md:h-7" /> : <Moon className="w-4 h-4 md:w-7 md:h-7" />}
             </button>
             {/* Solarized toggle */}
             <button
               onClick={() => setTheme(theme === 'solarized' ? 'dark' : 'solarized')}
               title={theme === 'solarized' ? 'Volver a Dark' : 'Tema Solarized Sunset'}
-              className={`p-3 md:p-5 rounded-2xl border transition-all hover:scale-110 text-sm ${
+              className={`p-2.5 md:p-5 rounded-2xl border transition-all hover:scale-110 text-xs md:text-sm ${
                 theme === 'solarized'
                   ? 'bg-orange-200/40 border-orange-300 text-orange-600 shadow-xl shadow-orange-500/20'
                   : 'bg-white/5 border-white/10 text-amber-500/60 hover:text-amber-400'
@@ -3566,8 +3569,8 @@ export default function OracleWarRoomPage() {
               🌅
             </button>
           </div>
-          <button onClick={() => setIsChatOpen(true)} className="p-3 md:p-5 rounded-2xl bg-cyan-500 text-white border-cyan-400/20 shadow-2xl shadow-cyan-500/40 hover:scale-110 transition-all">
-            <MessageSquare className="w-5 h-5 md:w-7 md:h-7" />
+          <button onClick={() => setIsChatOpen(true)} className="p-2.5 md:p-5 rounded-2xl bg-cyan-500 text-white border-cyan-400/20 shadow-2xl shadow-cyan-500/40 hover:scale-110 transition-all flex-shrink-0">
+            <MessageSquare className="w-4 h-4 md:w-7 md:h-7" />
           </button>
         </div>
       </nav>
