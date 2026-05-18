@@ -2408,12 +2408,12 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4 transition-all duration-300 ${
+            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4 transition-all duration-300 ${
               appTheme === 'dark' 
-                ? 'bg-black/85' 
+                ? 'bg-black/95' 
                 : appTheme === 'solarized' 
-                ? 'bg-orange-950/40' 
-                : 'bg-slate-900/40'
+                ? 'bg-[#FFF7ED]/96' 
+                : 'bg-[#F8FAFC]/96'
             }`}
           >
             <motion.div
