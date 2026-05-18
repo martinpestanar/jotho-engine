@@ -2408,12 +2408,12 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4 transition-all duration-300 ${
+            className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
               appTheme === 'dark' 
-                ? 'bg-black/95' 
+                ? 'bg-[#05070f]' 
                 : appTheme === 'solarized' 
-                ? 'bg-[#FFF7ED]/96' 
-                : 'bg-[#F8FAFC]/96'
+                ? 'bg-[#FDF6E3]' 
+                : 'bg-[#F1F5F9]'
             }`}
           >
             <motion.div
@@ -2422,7 +2422,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
               exit={{ scale: 0.95, y: 20 }}
               className={`relative w-full max-w-5xl border rounded-[2.5rem] p-8 md:p-10 shadow-2xl flex flex-col gap-6 max-h-[90vh] overflow-hidden transition-all duration-300 ${
                 appTheme === 'dark'
-                  ? 'bg-[#090d16] border-indigo-500/20 text-slate-100 shadow-[0_0_50px_rgba(0,0,0,0.8)]'
+                  ? 'bg-[#0a0f1d] border-indigo-500/20 text-slate-100 shadow-[0_0_50px_rgba(0,0,0,0.8)]'
                   : appTheme === 'solarized'
                   ? 'bg-[#FFFDF9] border-orange-200/80 text-orange-950 shadow-[0_15px_50px_rgba(124,45,18,0.1)]'
                   : 'bg-white border-slate-200 text-slate-800 shadow-[0_15px_50px_rgba(0,0,0,0.08)]'
@@ -2441,9 +2441,9 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 onClick={() => setIsCycleModalOpen(false)}
                 className={`absolute top-6 right-6 p-3 rounded-xl border transition-all cursor-pointer z-10 hover:scale-105 active:scale-95 ${
                   appTheme === 'dark'
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-400 hover:text-white'
+                    ? 'bg-[#1e293b] border-white/10 hover:bg-[#334155] text-slate-400 hover:text-white'
                     : appTheme === 'solarized'
-                    ? 'bg-orange-100/50 border-orange-200/50 hover:bg-orange-200/50 text-orange-700 hover:text-orange-900'
+                    ? 'bg-orange-100 border-orange-200 hover:bg-orange-200 text-orange-700 hover:text-orange-900'
                     : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -2486,10 +2486,10 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
               {!profileGameVars?.oracle_custom_cycle?.active && (
                 <div className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${
                   appTheme === 'dark'
-                    ? 'bg-black/40 border-white/5'
+                    ? 'bg-[#111827] border-white/5'
                     : appTheme === 'solarized'
-                    ? 'bg-orange-50/60 border-orange-200/50'
-                    : 'bg-slate-50 border-slate-200'
+                    ? 'bg-[#FFF3E3] border-orange-200/50'
+                    : 'bg-[#F1F5F9] border-slate-200'
                 }`}>
                   <span className={`text-[10px] font-black uppercase tracking-widest ${
                     appTheme === 'dark' ? 'text-slate-400' : appTheme === 'solarized' ? 'text-orange-800/80' : 'text-slate-500'
@@ -2502,7 +2502,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       appTheme === 'dark'
                         ? 'bg-indigo-500/10 border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400'
                         : appTheme === 'solarized'
-                        ? 'bg-orange-200/40 border-orange-300 text-orange-700 hover:bg-orange-200/60 hover:text-orange-900'
+                        ? 'bg-orange-200 border-orange-300 text-orange-700 hover:bg-orange-200/60 hover:text-orange-900'
                         : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
                     }`}
                   >
@@ -2520,15 +2520,15 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     className={`p-5 rounded-2xl border transition-all ${
                       profileGameVars?.oracle_custom_cycle?.active
                         ? appTheme === 'dark'
-                          ? 'bg-slate-500/[0.02] border-white/5'
+                          ? 'bg-[#0c101b] border-white/5'
                           : appTheme === 'solarized'
-                          ? 'bg-orange-800/[0.02] border-orange-200/40'
-                          : 'bg-slate-500/[0.02] border-slate-200/40'
+                          ? 'bg-[#FFF3E3] border-orange-200/40'
+                          : 'bg-[#F1F5F9] border-slate-200/40'
                         : appTheme === 'dark'
-                        ? 'bg-black/30 border-white/5 hover:border-indigo-500/30 focus-within:border-indigo-500/30'
+                        ? 'bg-[#111827] border-white/5 hover:border-indigo-500/30 focus-within:border-indigo-500/30'
                         : appTheme === 'solarized'
-                        ? 'bg-[#FFF8EE] border-orange-100/80 hover:border-orange-300 focus-within:border-orange-300'
-                        : 'bg-[#F8FAFC] border-slate-200/60 hover:border-slate-300 focus-within:border-indigo-300'
+                        ? 'bg-[#FFF8EE] border-orange-200/80 hover:border-orange-300 focus-within:border-orange-300'
+                        : 'bg-[#F8FAFC] border-slate-200 hover:border-slate-300 focus-within:border-indigo-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
