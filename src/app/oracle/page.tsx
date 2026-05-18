@@ -2415,6 +2415,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 ? 'bg-[#FDF6E3]' 
                 : 'bg-[#F1F5F9]'
             }`}
+            style={{ 
+              backgroundColor: appTheme === 'dark' 
+                ? '#05070f' 
+                : appTheme === 'solarized' 
+                ? '#FDF6E3' 
+                : '#F1F5F9'
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
@@ -2427,6 +2434,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   ? 'bg-[#FFFDF9] border-orange-200/80 text-orange-950 shadow-[0_15px_50px_rgba(124,45,18,0.1)]'
                   : 'bg-white border-slate-200 text-slate-800 shadow-[0_15px_50px_rgba(0,0,0,0.08)]'
               }`}
+              style={{ 
+                backgroundColor: appTheme === 'dark' 
+                  ? '#0a0f1d' 
+                  : appTheme === 'solarized' 
+                  ? '#FFFDF9' 
+                  : '#FFFFFF'
+              }}
             >
               {/* Glow FX */}
               <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full pointer-events-none blur-[80px] ${
