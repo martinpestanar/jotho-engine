@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+let supabaseAdminInstance: any = null
+
+function getSupabaseAdmin() {
+  if (!supabaseAdminInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // During build time on Vercel, if env vars are not set yet, we return a mock client
+    // to avoid throwing an error and breaking the build process.
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("Supabase environment variables are missing during lazy instantiation. Returning placeholder client for build validation.")
+      return createClient("https://placeholder-url-for-build.supabase.co", "placeholder-key-for-build")
+    }
+
+    supabaseAdminInstance = createClient(supabaseUrl, supabaseKey)
+  }
+  return supabaseAdminInstance
+}
 
 export async function POST(
   req: NextRequest,
@@ -17,6 +31,8 @@ export async function POST(
   if (!userId) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 })
   }
+
+  const supabaseAdmin = getSupabaseAdmin()
 
   try {
     switch (action) {
