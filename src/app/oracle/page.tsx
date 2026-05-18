@@ -2408,39 +2408,73 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4 transition-all duration-300 ${
+              appTheme === 'dark' 
+                ? 'bg-black/85' 
+                : appTheme === 'solarized' 
+                ? 'bg-orange-950/40' 
+                : 'bg-slate-900/40'
+            }`}
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl bg-[#090d16] border border-indigo-500/20 rounded-[2.5rem] p-8 md:p-10 shadow-2xl flex flex-col gap-6 max-h-[90vh] overflow-hidden"
+              className={`relative w-full max-w-5xl border rounded-[2.5rem] p-8 md:p-10 shadow-2xl flex flex-col gap-6 max-h-[90vh] overflow-hidden transition-all duration-300 ${
+                appTheme === 'dark'
+                  ? 'bg-[#090d16] border-indigo-500/20 text-slate-100 shadow-[0_0_50px_rgba(0,0,0,0.8)]'
+                  : appTheme === 'solarized'
+                  ? 'bg-[#FFFDF9] border-orange-200/80 text-orange-950 shadow-[0_15px_50px_rgba(124,45,18,0.1)]'
+                  : 'bg-white border-slate-200 text-slate-800 shadow-[0_15px_50px_rgba(0,0,0,0.08)]'
+              }`}
             >
               {/* Glow FX */}
-              <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
-              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-[80px] rounded-full pointer-events-none" />
+              <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full pointer-events-none blur-[80px] ${
+                appTheme === 'dark' ? 'bg-indigo-500/10' : appTheme === 'solarized' ? 'bg-orange-500/10' : 'bg-indigo-500/5'
+              }`} />
+              <div className={`absolute -bottom-24 -right-24 w-48 h-48 rounded-full pointer-events-none blur-[80px] ${
+                appTheme === 'dark' ? 'bg-cyan-500/10' : appTheme === 'solarized' ? 'bg-amber-500/10' : 'bg-cyan-500/5'
+              }`} />
 
               {/* Botón Cerrar */}
               <button
                 onClick={() => setIsCycleModalOpen(false)}
-                className="absolute top-6 right-6 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer z-10"
+                className={`absolute top-6 right-6 p-3 rounded-xl border transition-all cursor-pointer z-10 hover:scale-105 active:scale-95 ${
+                  appTheme === 'dark'
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-400 hover:text-white'
+                    : appTheme === 'solarized'
+                    ? 'bg-orange-100/50 border-orange-200/50 hover:bg-orange-200/50 text-orange-700 hover:text-orange-900'
+                    : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-500 hover:text-slate-800'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Canal de Contenidos del Guerrero</span>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${
+                    appTheme === 'dark' ? 'text-indigo-400' : appTheme === 'solarized' ? 'text-orange-600' : 'text-indigo-600'
+                  }`}>
+                    Canal de Contenidos del Guerrero
+                  </span>
                   {profileGameVars?.oracle_custom_cycle?.active && (
-                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center gap-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-500 flex items-center gap-1">
                       <Lock className="w-3 h-3" /> Sellado en Supabase
                     </span>
                   )}
                 </div>
-                <h3 className="text-2xl font-[1000] italic uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 mt-1">
+                <h3 className={`text-2xl font-[1000] italic uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r mt-1 ${
+                  appTheme === 'dark'
+                    ? 'from-cyan-400 to-indigo-400'
+                    : appTheme === 'solarized'
+                    ? 'from-orange-600 to-amber-700'
+                    : 'from-indigo-600 to-cyan-600'
+                }`}>
                   ⚔️ Forja de 12 Desafíos del Ciclo
                 </h3>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed mt-2">
+                <p className={`text-[10px] font-bold uppercase tracking-widest leading-relaxed mt-2 ${
+                  appTheme === 'dark' ? 'text-slate-500' : appTheme === 'solarized' ? 'text-orange-800/60' : 'text-slate-400'
+                }`}>
                   {profileGameVars?.oracle_custom_cycle?.active
                     ? "Tus 12 desafíos están sellados bajo el juramento del guerrero. Serán invocados aleatoriamente cada 2 días."
                     : "Define las 12 ideas de automatización con n8n que forjarás en tu ciclo de 24 días. Puedes precargar plantillas sugeridas."
@@ -2450,11 +2484,27 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
               {/* Controles de Preload (sólo si no está activo) */}
               {!profileGameVars?.oracle_custom_cycle?.active && (
-                <div className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-white/5">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">¿Quieres un inicio rápido?</span>
+                <div className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${
+                  appTheme === 'dark'
+                    ? 'bg-black/40 border-white/5'
+                    : appTheme === 'solarized'
+                    ? 'bg-orange-50/60 border-orange-200/50'
+                    : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${
+                    appTheme === 'dark' ? 'text-slate-400' : appTheme === 'solarized' ? 'text-orange-800/80' : 'text-slate-500'
+                  }`}>
+                    ¿Quieres un inicio rápido con plantillas predefinidas?
+                  </span>
                   <button
                     onClick={handlePreloadTemplates}
-                    className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5"
+                    className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 ${
+                      appTheme === 'dark'
+                        ? 'bg-indigo-500/10 border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400'
+                        : appTheme === 'solarized'
+                        ? 'bg-orange-200/40 border-orange-300 text-orange-700 hover:bg-orange-200/60 hover:text-orange-900'
+                        : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
+                    }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Precargar Retos con n8n</span>
@@ -2469,18 +2519,30 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     key={idx}
                     className={`p-5 rounded-2xl border transition-all ${
                       profileGameVars?.oracle_custom_cycle?.active
-                        ? "bg-slate-500/[0.02] border-white/5"
-                        : "bg-black/30 border-white/5 hover:border-indigo-500/30 focus-within:border-indigo-500/30"
+                        ? appTheme === 'dark'
+                          ? 'bg-slate-500/[0.02] border-white/5'
+                          : appTheme === 'solarized'
+                          ? 'bg-orange-800/[0.02] border-orange-200/40'
+                          : 'bg-slate-500/[0.02] border-slate-200/40'
+                        : appTheme === 'dark'
+                        ? 'bg-black/30 border-white/5 hover:border-indigo-500/30 focus-within:border-indigo-500/30'
+                        : appTheme === 'solarized'
+                        ? 'bg-[#FFF8EE] border-orange-100/80 hover:border-orange-300 focus-within:border-orange-300'
+                        : 'bg-[#F8FAFC] border-slate-200/60 hover:border-slate-300 focus-within:border-indigo-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Reto #{idx + 1}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${
+                        appTheme === 'dark' ? 'text-slate-500' : appTheme === 'solarized' ? 'text-orange-700/60' : 'text-slate-400'
+                      }`}>
+                        Reto #{idx + 1}
+                      </span>
                       {profileGameVars?.oracle_custom_cycle?.challenges?.[idx]?.completed ? (
-                        <span className="text-[9px] font-black uppercase text-cyan-400 flex items-center gap-1">
+                        <span className="text-[9px] font-black uppercase text-cyan-500 flex items-center gap-1">
                           ✓ Completado
                         </span>
                       ) : profileGameVars?.oracle_custom_cycle?.active ? (
-                        <Lock className="w-3 h-3 text-slate-600" />
+                        <Lock className={`w-3 h-3 ${appTheme === 'solarized' ? 'text-orange-300' : 'text-slate-600'}`} />
                       ) : null}
                     </div>
 
@@ -2494,7 +2556,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                         setCycleInputs(next)
                       }}
                       disabled={profileGameVars?.oracle_custom_cycle?.active}
-                      className="bg-black/60 text-xs font-black uppercase tracking-wider text-slate-200 px-4 py-2.5 rounded-xl border border-white/5 w-full focus:outline-none focus:border-indigo-500/50 disabled:opacity-60"
+                      className={`text-sm font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl border w-full focus:outline-none focus:ring-2 disabled:opacity-60 transition-all ${
+                        appTheme === 'dark'
+                          ? 'bg-[#030712] text-slate-100 border-white/10 focus:border-indigo-500/50 focus:ring-indigo-500/10 placeholder:text-slate-600'
+                          : appTheme === 'solarized'
+                          ? 'bg-white text-orange-950 border-orange-200/80 focus:border-orange-500 focus:ring-orange-500/10 placeholder:text-orange-800/30'
+                          : 'bg-white text-slate-800 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10 placeholder:text-slate-400'
+                      }`}
                     />
 
                     <textarea
@@ -2507,7 +2575,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       }}
                       disabled={profileGameVars?.oracle_custom_cycle?.active}
                       rows={3}
-                      className="bg-black/60 text-[11px] font-medium text-slate-400 p-4 rounded-xl border border-white/5 w-full focus:outline-none focus:border-indigo-500/50 mt-3 resize-none h-20 disabled:opacity-60"
+                      className={`text-xs font-semibold p-4 rounded-xl border w-full focus:outline-none focus:ring-2 mt-3 resize-none h-20 disabled:opacity-60 transition-all ${
+                        appTheme === 'dark'
+                          ? 'bg-[#030712] text-slate-300 border-white/10 focus:border-indigo-500/50 focus:ring-indigo-500/10 placeholder:text-slate-600'
+                          : appTheme === 'solarized'
+                          ? 'bg-white text-orange-900 border-orange-200/80 focus:border-orange-500 focus:ring-orange-500/10 placeholder:text-orange-800/30'
+                          : 'bg-white text-slate-600 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 ))}
@@ -2515,11 +2589,19 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
               {/* Botón de Guardado e Inicio (sólo si no está activo) */}
               {!profileGameVars?.oracle_custom_cycle?.active && (
-                <div className="flex justify-end pt-4 border-t border-white/5">
+                <div className={`flex justify-end pt-4 border-t ${
+                  appTheme === 'dark' ? 'border-white/5' : appTheme === 'solarized' ? 'border-orange-200/40' : 'border-slate-200/60'
+                }`}>
                   <button
                     onClick={handleSaveCustomCycle}
                     disabled={actionLoading !== null}
-                    className="px-6 py-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-cyan-600/30 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                    className={`px-6 py-4 rounded-2xl bg-gradient-to-r text-white text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 ${
+                      appTheme === 'dark'
+                        ? 'from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-cyan-600/30'
+                        : appTheme === 'solarized'
+                        ? 'from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-orange-600/20'
+                        : 'from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 shadow-indigo-600/20'
+                    }`}
                   >
                     <Shield className="w-4 h-4" />
                     <span>{actionLoading === "save-cycle" ? "Sellando Pacto..." : "⚔️ Sellar 12 Desafíos y Activar Ciclo"}</span>
