@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Poppins, Geist_Mono } from "next/font/google"
+import { Poppins, Geist_Mono, Cormorant_Garamond } from "next/font/google"
 import ClientLayout from "./ClientLayout"
 import "./globals.css"
 
@@ -12,6 +12,13 @@ const poppins = Poppins({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+})
+
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-cormorant-garamond",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 })
 
 export const metadata: Metadata = {
@@ -41,7 +48,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${poppins.variable} ${geistMono.variable} ${cormorantGaramond.variable} h-full antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />

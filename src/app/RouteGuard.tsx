@@ -10,6 +10,13 @@ interface Props {
   children: ReactNode
 }
 
+const getLocalDateString = (d: Date = new Date()) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 /**
  * RouteGuard — enforces the daily flow and authentication:
  *   /login, /auth/callback → allowed always
@@ -126,7 +133,7 @@ export default function RouteGuard({ children }: Props) {
         return
       }
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       const { data } = await supabase
         .from("daily_scores")
         .select("id")

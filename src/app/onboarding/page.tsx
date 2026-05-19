@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -117,6 +117,9 @@ export default function OnboardingCompleto() {
   const [errorMensaje, setErrorMensaje] = useState('');
   const { completeOnboarding } = useAppStore();
 
+  const guardandoRef = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const totalPasos = 5;
 
   useEffect(() => {
@@ -167,69 +170,83 @@ export default function OnboardingCompleto() {
   }, []);
 
   const persistirProgreso = async (siguientePaso: number) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (guardandoRef.current) {
+      console.warn("Guardado ya en progreso, ignorando llamada duplicada");
+      return;
+    }
+    guardandoRef.current = true;
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    // Validar números para evitar NaN (causa error 400)
-    const edadNum = parseInt(datos.edad) || 0;
-    const ingresoActual = parseFloat(datos.ingreso_actual) || 0;
-    const ingreso90d = parseFloat(datos.ingreso_meta_90d) || 0;
-    const ingreso1y = parseFloat(datos.ingreso_meta_1y) || 0;
+      // Validar números para evitar NaN (causa error 400)
+      const edadNum = parseInt(datos.edad) || 0;
+      const ingresoActual = parseFloat(datos.ingreso_actual) || 0;
+      const ingreso90d = parseFloat(datos.ingreso_meta_90d) || 0;
+      const ingreso1y = parseFloat(datos.ingreso_meta_1y) || 0;
 
-    // Guardar estado actual del Plan
-    const { error: lpError } = await supabase.from('life_plan').upsert({
-      user_id: user.id,
-      identity_info: { nombre: datos.nombre, edad: edadNum, profesion: datos.profesion },
-      timezone: datos.timezone,
-      financial_info: { 
-        ingreso_actual: ingresoActual, 
-        ingreso_meta_90d: ingreso90d, 
-        ingreso_meta_1y: ingreso1y, 
-        fuente: datos.fuente_ingresos 
-      },
-      skills_mastery: datos.skills,
-      quarterly_goals: { texto: datos.metas_90d },
-      annual_goals: { texto: datos.metas_1y },
-      long_term_goals: { texto: datos.metas_3y },
-      motivations_long: datos.motivaciones,
-      brand_strategy: { 
-        nicho: datos.nicho, 
-        frecuencia: datos.frecuencia, 
-        enfoque_proyectos: datos.enfoque_proyectos 
-      },
-      content_pillars: datos.pilares,
-      social_platforms: datos.plataformas,
-      demon_config: { activos: datos.demonios_activos, extra: datos.demonios_extra }
-    }, { onConflict: 'user_id' });
+      // Guardar estado actual del Plan
+      const { error: lpError } = await supabase.from('life_plan').upsert({
+        user_id: user.id,
+        identity_info: { nombre: datos.nombre, edad: edadNum, profesion: datos.profesion },
+        timezone: datos.timezone,
+        financial_info: { 
+          ingreso_actual: ingresoActual, 
+          ingreso_meta_90d: ingreso90d, 
+          ingreso_meta_1y: ingreso1y, 
+          fuente: datos.fuente_ingresos 
+        },
+        skills_mastery: datos.skills,
+        quarterly_goals: { texto: datos.metas_90d },
+        annual_goals: { texto: datos.metas_1y },
+        long_term_goals: { texto: datos.metas_3y },
+        motivations_long: datos.motivaciones,
+        brand_strategy: { 
+          nicho: datos.nicho, 
+          frecuencia: datos.frecuencia, 
+          enfoque_proyectos: datos.enfoque_proyectos 
+        },
+        content_pillars: datos.pilares,
+        social_platforms: datos.plataformas,
+        demon_config: { activos: datos.demonios_activos, extra: datos.demonios_extra }
+      }, { onConflict: 'user_id' });
 
-    if (lpError) console.error("Error guardando life_plan:", lpError);
+      if (lpError) console.error("Error guardando life_plan:", lpError);
 
-    // Guardar bloques: Automatizar de Lunes a Viernes (1-5) y Weekend (6,0)
-    await supabase.from('schedule_blocks').delete().eq('user_id', user.id);
-    if (datos.bloques.length > 0) {
-      const allWeekBlocks: any[] = [];
-      
-      // Guardar bloques para todos los días de la semana (0 a 6) de forma completa
-      [0, 1, 2, 3, 4, 5, 6].forEach(day => {
-        datos.bloques.forEach(b => {
-          allWeekBlocks.push({
-            user_id: user.id,
-            day_of_week: day,
-            start_time: b.start_time,
-            end_time: b.end_time,
-            activity_name: b.activity_name,
-            category: b.category
+      // Guardar bloques: Automatizar de Lunes a Viernes (1-5) y Weekend (6,0)
+      await supabase.from('schedule_blocks').delete().eq('user_id', user.id);
+      if (datos.bloques.length > 0) {
+        const allWeekBlocks: any[] = [];
+        
+        // Guardar bloques para todos los días de la semana (0 a 6) de forma completa
+        [0, 1, 2, 3, 4, 5, 6].forEach(day => {
+          datos.bloques.forEach(b => {
+            allWeekBlocks.push({
+              user_id: user.id,
+              day_of_week: day,
+              start_time: b.start_time,
+              end_time: b.end_time,
+              activity_name: b.activity_name,
+              category: b.category
+            });
           });
         });
-      });
-      await supabase.from('schedule_blocks').insert(allWeekBlocks);
-    }
+        await supabase.from('schedule_blocks').insert(allWeekBlocks);
+      }
 
-    // Actualizar paso en user_status
-    await supabase.from('user_status').update({ onboarding_step: siguientePaso }).eq('user_id', user.id);
+      // Actualizar paso en user_status
+      await supabase.from('user_status').update({ onboarding_step: siguientePaso }).eq('user_id', user.id);
+    } catch (err) {
+      console.error("Error persistiendo progreso:", err);
+    } finally {
+      guardandoRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   const avanzarPaso = async () => {
+    if (isSaving || estaCargando) return;
     if (pasoActual < totalPasos) {
       const proximo = pasoActual + 1;
       setDireccion(1);
@@ -239,6 +256,7 @@ export default function OnboardingCompleto() {
   };
 
   const retrocederPaso = async () => {
+    if (isSaving || estaCargando) return;
     if (pasoActual > 1) {
       const anterior = pasoActual - 1;
       setDireccion(-1);
@@ -252,6 +270,7 @@ export default function OnboardingCompleto() {
   };
 
   const sincronizar = async () => {
+    if (isSaving || estaCargando) return;
     setEstaCargando(true);
     setErrorMensaje('');
     try {
@@ -347,14 +366,31 @@ export default function OnboardingCompleto() {
 
         {/* Footer Navegación */}
         <div className={`p-10 border-t flex justify-between items-center ${theme === "dark" ? "bg-white/[0.02] border-white/5" : "bg-slate-50 border-slate-100"}`}>
-          <button onClick={retrocederPaso} className={`px-8 py-4 font-black uppercase tracking-widest text-slate-500 ${pasoActual === 1 ? 'invisible' : ''}`}>Atrás</button>
+          <button 
+            onClick={retrocederPaso} 
+            disabled={isSaving || estaCargando} 
+            className={`px-8 py-4 font-black uppercase tracking-widest text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed ${pasoActual === 1 ? 'invisible' : ''}`}
+          >
+            Atrás
+          </button>
           
           {pasoActual < totalPasos ? (
-            <button onClick={avanzarPaso} className="px-10 py-5 bg-cyan-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-cyan-500/20">Siguiente</button>
+            <button 
+              onClick={avanzarPaso} 
+              disabled={isSaving || estaCargando} 
+              className="px-10 py-5 bg-cyan-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isSaving && <Loader2 className="animate-spin mr-2 text-white" />}
+              {isSaving ? 'Guardando...' : 'Siguiente'}
+            </button>
           ) : (
-            <button onClick={sincronizar} disabled={estaCargando} className="px-12 py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center">
-              {estaCargando ? <Loader2 className="animate-spin mr-2" /> : <Rocket className="mr-2" />}
-              {isEditMode ? 'Actualizar' : 'Finalizar Ritual'}
+            <button 
+              onClick={sincronizar} 
+              disabled={estaCargando || isSaving} 
+              className="px-12 py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {estaCargando || isSaving ? <Loader2 className="animate-spin mr-2 text-white" /> : <Rocket className="mr-2 text-white" />}
+              {estaCargando || isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Finalizar Ritual')}
             </button>
           )}
         </div>

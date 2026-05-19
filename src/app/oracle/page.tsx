@@ -8,11 +8,11 @@ import { useOracleStore } from "@/store/useOracleStore"
 import { useEconomyStore } from "@/store/useEconomyStore"
 import { 
   Sparkles, Brain, Music, Trash2, 
-  Sun, Moon, Coffee, Briefcase, ChevronRight, 
+  Sun, Moon, Coffee, Briefcase, ChevronRight, ChevronDown, Check,
   MessageSquare, User, Shield, Activity,
   Clock, Power, Edit3, Save, X, ListTodo, CheckCircle2, Circle, Plus, History, Play,
   Zap, Globe, Heart, Trophy, Flame, Gamepad2, Swords, Lock, Unlock, Calendar, AlertTriangle, FileText,
-  Video, Share2, ExternalLink
+  Video, Share2, ExternalLink, BookOpen
 } from "lucide-react"
 import { supabase } from "@/shared/lib/supabase/client"
 import OracleDrawer from "@/components/OracleDrawer"
@@ -23,52 +23,52 @@ import OracleDrawer from "@/components/OracleDrawer"
 
 const N8N_CHALLENGES_POOL = [
   {
-    title: "AI Voice Newsletter",
-    description: "Transcribe podcasts en caliente y genera resúmenes leídos por voz artificial (ElevenLabs) enviados a WhatsApp."
+    title: "Recordatorios de Grooming IA",
+    description: "Sistema de citas de baño/corte con recordatorios inteligentes por WhatsApp y confirmaciones personalizadas por IA."
   },
   {
-    title: "Autopilot Content Syndicator",
-    description: "Al subir un archivo a Google Drive, lo procesa con OpenAI, genera 3 copies diferentes y los programa en Buffer."
+    title: "Menú Inteligente con QR Vegano",
+    description: "Mini web app con QR que permite a los comensales consultar el menú y chatear con una IA sobre ingredientes o maridajes."
   },
   {
-    title: "Lead Scraping & Enrichment Flow",
-    description: "Captura menciones de X/Twitter, analiza sentimiento, extrae el perfil y lo añade enriquecido a Notion CRM."
+    title: "Agente IA Agendamiento Belleza",
+    description: "Chatbot de WhatsApp que consulta horarios libres en Supabase, agenda citas de forma autónoma y envía confirmación."
   },
   {
-    title: "GitHub Commit News",
-    description: "Escucha cambios en un repositorio y escribe un changelog interactivo con memes de IA posteado en Discord."
+    title: "Reputación Google Maps Auto",
+    description: "Flujo que envía WhatsApp post-compra: filtra quejas a soporte humano y redirige las 5 estrellas a Google Maps."
   },
   {
-    title: "Multi-Language Subtitler",
-    description: "Toma un video de YouTube, genera subtítulos en 3 idiomas con Whisper y los empaqueta en carpetas separadas."
+    title: "Clasificador Leads Real Estate",
+    description: "Agente conversacional en WhatsApp que califica el presupuesto y zona de leads de inmuebles y los inserta en Supabase."
   },
   {
-    title: "Personal Finance Bot",
-    description: "Procesa tickets de compra escaneados de Telegram, extrae importes y categorías con GPT-4 Vision, y actualiza Supabase."
+    title: "Asistente Ventas E-commerce RAG",
+    description: "Vendedor experto en WhatsApp que usa búsqueda vectorial en Supabase para buscar y recomendar productos del catálogo."
   },
   {
-    title: "Auto-Edición de Clips",
-    description: "Lee timestamps de video, invoca APIs de recorte y extrae los mejores clips de forma semi-automatizada."
+    title: "Recuperador Carritos WhatsApp",
+    description: "Envía un mensaje empático por WhatsApp con descuento dinámico al detectar un carrito abandonado en la tienda online."
   },
   {
-    title: "Academia Quest Engine",
-    description: "Genera exámenes automáticos de programación usando PDFs cargados en Notion y califica respuestas enviadas por correo."
+    title: "Facturas y Firma de Contratos",
+    description: "Genera PDFs de contratos desde Supabase al recibir un Stripe checkout, gestiona firma digital y emite factura."
   },
   {
-    title: "Social Listening Alerts",
-    description: "Monitorea subreddits de nicho y te avisa por Telegram con un análisis del pain-point principal del usuario."
+    title: "Soporte Técnico B2B Base RAG",
+    description: "Bot corporativo que responde dudas técnicas usando base de conocimiento en Supabase o escala a Jira si no sabe."
   },
   {
-    title: "LinkedIn Auto-Hook Generator",
-    description: "Toma tus notas de voz en Telegram y las convierte en hilos atractivos de LinkedIn con alta tasa de gancho."
+    title: "Dashboard Flujo Caja WhatsApp",
+    description: "Reporte diario de ingresos, gastos y suscripciones consolidado de Stripe enviado al CEO por WhatsApp todas las mañanas."
   },
   {
-    title: "Smart Cloud Backup",
-    description: "Sincroniza todas tus capturas y proyectos locales, les pone tags automáticos y los sube organizados a Google Drive."
+    title: "Onboarding Clientes Autónomo",
+    description: "Crea espacios de Notion, accesos de Drive, agenda Kickoff y manda bienvenida por WhatsApp al firmar contrato B2B."
   },
   {
-    title: "AI Avatar Generator Pipeline",
-    description: "Envía un selfi, ejecuta un pipeline de Stable Diffusion y actualiza tu avatar en tu portafolio personal."
+    title: "Agente Prospección IA LinkedIn",
+    description: "Monitorea posts de nicho, califica la empresa en Supabase y redacta un borrador hiper-personalizado de contacto."
   }
 ]
 
@@ -88,12 +88,117 @@ const CardBackgroundEffect = ({ color }: { color: string }) => (
   </div>
 )
 
+// ================= MARKDOWN PARSER FOR CHALLENGES =================
+
+const parseInlines = (text: string, theme: string) => {
+  const boldRegex = /\*\*(.*?)\*\*/g
+  const parts = []
+  let lastIndex = 0
+  let match
+  
+  const boldColor = theme === 'dark' ? 'text-slate-100' : theme === 'solarized' ? 'text-orange-950' : 'text-slate-900'
+  
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index))
+    }
+    parts.push(
+      <strong key={match.index} className={`font-extrabold ${boldColor}`}>
+        {match[1]}
+      </strong>
+    )
+    lastIndex = boldRegex.lastIndex
+  }
+  
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex))
+  }
+  
+  return parts.length > 0 ? parts : text
+}
+
+const renderMarkdown = (text: string, theme: string) => {
+  if (!text) return null
+  
+  const lines = text.replace(/\\n/g, '\n').split('\n')
+  return lines.map((line, idx) => {
+    const trimmed = line.trim()
+    if (!trimmed) return <div key={idx} className="h-2" />
+    
+    if (trimmed.startsWith('# ')) {
+      const content = trimmed.substring(2)
+      return (
+        <h1 key={idx} className={`text-[13px] md:text-sm font-black uppercase tracking-wider border-b pb-2 mb-4 mt-6 first:mt-0 ${
+          theme === 'dark' ? 'text-slate-100 border-white/5' : theme === 'solarized' ? 'text-orange-950 border-orange-200/50' : 'text-slate-800 border-slate-200'
+        }`}>
+          {parseInlines(content, theme)}
+        </h1>
+      )
+    }
+    
+    if (trimmed.startsWith('## ')) {
+      const content = trimmed.substring(3)
+      return (
+        <h2 key={idx} className={`text-[11px] font-black uppercase tracking-wider mt-5 mb-2 ${
+          theme === 'dark' ? 'text-indigo-400' : theme === 'solarized' ? 'text-orange-850' : 'text-indigo-600'
+        }`}>
+          {parseInlines(content, theme)}
+        </h2>
+      )
+    }
+
+    if (trimmed.startsWith('### ')) {
+      const content = trimmed.substring(4)
+      return (
+        <h3 key={idx} className={`text-[10px] font-black uppercase tracking-wider mt-4 mb-2 ${
+          theme === 'dark' ? 'text-cyan-400' : theme === 'solarized' ? 'text-amber-600' : 'text-cyan-600'
+        }`}>
+          {parseInlines(content, theme)}
+        </h3>
+      )
+    }
+    
+    if (trimmed === '---') {
+      return <div key={idx} className={`h-[1px] my-5 ${
+        theme === 'dark' ? 'bg-white/5' : theme === 'solarized' ? 'bg-orange-200/50' : 'bg-slate-200'
+      }`} />
+    }
+    
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      const content = trimmed.substring(2)
+      return (
+        <ul key={idx} className={`list-disc pl-5 my-1 text-[10px] font-bold uppercase tracking-wider ${
+          theme === 'dark' ? 'text-slate-300' : theme === 'solarized' ? 'text-orange-900' : 'text-slate-600'
+        }`}>
+          <li>{parseInlines(content, theme)}</li>
+        </ul>
+      )
+    }
+    
+    return (
+      <p key={idx} className={`text-[10px] font-bold leading-relaxed text-justify mt-2 uppercase tracking-wide ${
+        theme === 'dark' ? 'text-slate-400' : theme === 'solarized' ? 'text-orange-800/80' : 'text-slate-500'
+      }`}>
+        {parseInlines(trimmed, theme)}
+      </p>
+    )
+  })
+}
+
 // ================= WIDGET COMPONENTS =================
+
+export const getLocalDateString = (d: Date = new Date()) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [blocks, setBlocks] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
+  const [checkins, setCheckins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newTaskText, setNewTaskText] = useState("")
   const [activeInputBlock, setActiveInputBlock] = useState<string | null>(null)
@@ -110,7 +215,16 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   const [editingBlockStartTime, setEditingBlockStartTime] = useState("")
   const [editingBlockEndTime, setEditingBlockEndTime] = useState("")
   const [editingBlockCategory, setEditingBlockCategory] = useState("Bloque Trabajo")
+  const [editingBlockPhrase, setEditingBlockPhrase] = useState("")
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Estados para inyectar/crear un bloque directamente debajo de una tarjeta
+  const [insertingBelowBlockId, setInsertingBelowBlockId] = useState<string | null>(null)
+  const [insertBelowName, setInsertBelowName] = useState("")
+  const [insertBelowPhrase, setInsertBelowPhrase] = useState("")
+  const [insertBelowStartTime, setInsertBelowStartTime] = useState("")
+  const [insertBelowEndTime, setInsertBelowEndTime] = useState("")
+  const [insertBelowCategory, setInsertBelowCategory] = useState("Bloque Trabajo")
 
   // Estado para crear un nuevo bloque
   const [newBlockName, setNewBlockName] = useState("")
@@ -126,12 +240,31 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   const [challengeVideoUrl, setChallengeVideoUrl] = useState("")
   const [challengeNotes, setChallengeNotes] = useState("")
 
+  // Estados para ver el detalle de los retos de la forja
+  const [masterChallenges, setMasterChallenges] = useState<any[]>([])
+  const [selectedDetailChallenge, setSelectedDetailChallenge] = useState<any>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+
   // Estados para el Ciclo de 12 Desafíos Personalizados
   const [profileGameVars, setProfileGameVars] = useState<any>(null)
   const [isCycleModalOpen, setIsCycleModalOpen] = useState(false)
+  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false)
   const [cycleInputs, setCycleInputs] = useState<Array<{ title: string; description: string }>>(
     Array.from({ length: 12 }, () => ({ title: "", description: "" }))
   )
+  const [showChallenges, setShowChallenges] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("oracle_show_challenges")
+      return stored !== null ? stored === "true" : false
+    }
+    return false
+  })
+
+  const toggleChallenges = () => {
+    const newVal = !showChallenges
+    setShowChallenges(newVal)
+    localStorage.setItem("oracle_show_challenges", String(newVal))
+  }
 
   // Estados para el Sistema Autónomo de Tiers (sin Oráculo)
   const [rewardModal, setRewardModal] = useState<{
@@ -511,6 +644,67 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
     }
   }
 
+  const addOneHour = (timeStr: string): string => {
+    if (!timeStr) return "09:00"
+    const [h, m] = timeStr.split(":")
+    const newHour = (parseInt(h, 10) + 1) % 24
+    const formattedHour = String(newHour).padStart(2, "0")
+    return `${formattedHour}:${m || "00"}`
+  }
+
+  const handleStartInsertBelow = (block: any) => {
+    setInsertingBelowBlockId(block.id)
+    setInsertBelowName("")
+    setInsertBelowPhrase("")
+    const start = block.end_time.substring(0, 5)
+    setInsertBelowStartTime(start)
+    setInsertBelowEndTime(addOneHour(start))
+    setInsertBelowCategory(block.category || "Bloque Trabajo")
+  }
+
+  const handleInsertBlockBelow = async (parentBlock: any) => {
+    if (!insertBelowName.trim() || !insertBelowStartTime || !insertBelowEndTime) {
+      alert("Por favor, completa el nombre y las horas del bloque.")
+      return
+    }
+    setActionLoading(`insert-below-${parentBlock.id}`)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const formattedStart = insertBelowStartTime.length === 5 ? `${insertBelowStartTime}:00` : insertBelowStartTime
+      const formattedEnd = insertBelowEndTime.length === 5 ? `${insertBelowEndTime}:00` : insertBelowEndTime
+
+      const { data, error } = await supabase
+        .from('schedule_blocks')
+        .insert({
+          user_id: user.id,
+          activity_name: insertBelowName.trim(),
+          start_time: formattedStart,
+          end_time: formattedEnd,
+          category: insertBelowCategory,
+          custom_phrase: insertBelowPhrase.trim() || null,
+          day_of_week: parentBlock.day_of_week
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setBlocks(prev => [...prev, data].sort((a, b) => a.start_time.localeCompare(b.start_time)))
+        setInsertBelowName("")
+        setInsertBelowPhrase("")
+        setInsertingBelowBlockId(null)
+      }
+    } catch (err) {
+      console.error("Error inserting block below:", err)
+      alert("Error al inyectar el nuevo bloque.")
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleSaveBlockEdit = async (blockId: string) => {
     if (!editingBlockName.trim() || !editingBlockStartTime || !editingBlockEndTime) return
     setActionLoading(`save-${blockId}`)
@@ -531,7 +725,8 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           activity_name: editingBlockName,
           start_time: formattedStart,
           end_time: formattedEnd,
-          category: editingBlockCategory
+          category: editingBlockCategory,
+          custom_phrase: editingBlockPhrase.trim() || null
         })
         .eq('id', blockId)
 
@@ -555,7 +750,8 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
         activity_name: editingBlockName,
         start_time: formattedStart,
         end_time: formattedEnd,
-        category: editingBlockCategory
+        category: editingBlockCategory,
+        custom_phrase: editingBlockPhrase.trim() || null
       } : b).sort((a, b) => a.start_time.localeCompare(b.start_time)))
 
       setEditingBlockId(null)
@@ -579,7 +775,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
       setBlocks(prev => prev.filter(b => b.id !== blockId))
       
-      const dateStr = new Date().toISOString().split('T')[0]
+      const dateStr = getLocalDateString()
       await supabase.from('schedule_checkins')
         .delete()
         .eq('date', dateStr)
@@ -766,7 +962,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       const result = await supabase.rpc('fn_registrar_dia', {
         p_user_id: user.id,
         p_date: today,
@@ -834,7 +1030,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       const today = new Date()
       // Usamos el día actual del sistema
       const dayIndex = today.getDay()
-      const dateStr = today.toISOString().split('T')[0]
+      const dateStr = getLocalDateString(today)
 
       // Cargar perfil para game_vars
       const { data: profileData } = await supabase
@@ -893,8 +1089,27 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
       if (pastCompletedData) setLastSessionNotes(pastCompletedData)
 
+      // Cargar checkins reales de hoy
+      const { data: checkinsData } = await supabase
+        .from('schedule_checkins')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', dateStr)
+
+      if (checkinsData) setCheckins(checkinsData)
+
       if (blocksData) setBlocks(blocksData)
       if (tasksData) setTasks(tasksData)
+
+      // Cargar los 12 desafíos maestro de la forja
+      const { data: masterChallengesData } = await supabase
+        .from('oracle_challenges_master')
+        .select('*')
+        .order('id', { ascending: true })
+
+      if (masterChallengesData) {
+        setMasterChallenges(masterChallengesData)
+      }
 
       // Cargar reto multimedia activo
       await fetchActiveChallenge()
@@ -965,28 +1180,74 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       const block = blocksList.find(b => b.activity_name === activityName)
       if (!block) return
 
-      const dateStr = new Date().toISOString().split('T')[0]
+      const dateStr = getLocalDateString()
       const blockTasks = currentTasks.filter(t => t.activity_name === activityName)
       
       const isCompleted = blockTasks.length > 0 && blockTasks.every(t => t.is_completed)
 
       if (isCompleted) {
-        await supabase.from('schedule_checkins').upsert({
+        const { data, error } = await supabase.from('schedule_checkins').upsert({
           user_id: user.id,
           date: dateStr,
           block_id: block.id,
           is_completed: true,
           completed_at: new Date().toISOString()
-        }, { onConflict: 'user_id,date,block_id' })
+        }, { onConflict: 'user_id,date,block_id' }).select()
+
+        if (!error && data && data.length > 0) {
+          setCheckins(prev => [...prev.filter(c => c.block_id !== block.id), data[0]])
+        }
       } else {
-        await supabase.from('schedule_checkins')
+        const { error } = await supabase.from('schedule_checkins')
           .delete()
           .eq('user_id', user.id)
           .eq('date', dateStr)
           .eq('block_id', block.id)
+
+        if (!error) {
+          setCheckins(prev => prev.filter(c => c.block_id !== block.id))
+        }
       }
     } catch (err) {
       console.error("Error syncing block completion:", err)
+    }
+  }
+
+  const toggleBlockCheckin = async (blockId: string, currentStatus: boolean) => {
+    setActionLoading(`checkin-${blockId}`)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const dateStr = getLocalDateString()
+
+      if (!currentStatus) {
+        const { data, error } = await supabase.from('schedule_checkins').upsert({
+          user_id: user.id,
+          date: dateStr,
+          block_id: blockId,
+          is_completed: true,
+          completed_at: new Date().toISOString()
+        }, { onConflict: 'user_id,date,block_id' }).select()
+
+        if (!error && data && data.length > 0) {
+          setCheckins(prev => [...prev.filter(c => c.block_id !== blockId), data[0]])
+        }
+      } else {
+        const { error } = await supabase.from('schedule_checkins')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('date', dateStr)
+          .eq('block_id', blockId)
+
+        if (!error) {
+          setCheckins(prev => prev.filter(c => c.block_id !== blockId))
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling block checkin:", err)
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -1001,8 +1262,8 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
         user_id: user.id,
         activity_name: activityName,
         task_text: newTaskText,
-        date: new Date().toISOString().split('T')[0],
-        original_date: new Date().toISOString().split('T')[0]
+        date: getLocalDateString(),
+        original_date: getLocalDateString()
       })
       .select()
       .single()
@@ -1051,14 +1312,28 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   }
 
   const handleSaveEdit = async (taskId: string) => {
-    if (!editingTaskText.trim()) return
+    if (!editingTaskText.trim()) {
+      // Si el usuario borra por completo el texto, eliminamos la tarea directamente
+      await deleteTask(taskId)
+      setEditingTaskId(null)
+      return
+    }
+
+    const todayStr = getLocalDateString()
     const { error } = await supabase
       .from('schedule_tasks')
-      .update({ task_text: editingTaskText })
+      .update({ 
+        task_text: editingTaskText,
+        original_date: todayStr // Reinicia la carga de honor al editar/escribir algo nuevo
+      })
       .eq('id', taskId)
 
     if (!error) {
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, task_text: editingTaskText } : t))
+      setTasks(prev => prev.map(t => t.id === taskId ? { 
+        ...t, 
+        task_text: editingTaskText,
+        original_date: todayStr 
+      } : t))
       setEditingTaskId(null)
     }
   }
@@ -1083,20 +1358,30 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
     const isWeekend = activeDay === 0 || activeDay === 6
     const targetPercentage = isWeekend ? 20 : 80
 
-    const totalTasks = tasks.length
-    const completedTasks = tasks.filter(t => t.is_completed).length
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    // Modificado para basarse en bloques de horario (planificación de horario) en lugar de tareas
+    const totalBlocks = blocks.length
+    
+    // Un bloque se considera completado si se ha marcado directamente en checkins
+    // o si tiene tareas registradas y todas están completas
+    const completedBlocks = blocks.filter(block => {
+      const isDirectlyChecked = checkins.some(c => c.block_id === block.id)
+      const blockTasks = tasks.filter(t => t.activity_name === block.activity_name)
+      const isCompletedByTasks = blockTasks.length > 0 && blockTasks.every(t => t.is_completed)
+      return isDirectlyChecked || isCompletedByTasks
+    }).length
+
+    const completionRate = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0
     const isGoalAchieved = completionRate >= targetPercentage
 
     return {
       isWeekend,
       targetPercentage,
-      totalTasks,
-      completedTasks,
+      totalTasks: totalBlocks,
+      completedTasks: completedBlocks,
       completionRate,
       isGoalAchieved
     }
-  }, [tasks])
+  }, [blocks, tasks, checkins])
 
   const challengeProgress = useMemo(() => {
     if (!activeChallenge) return 0
@@ -1111,6 +1396,12 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
     return Math.round((score / 7) * 100)
   }, [activeChallenge])
 
+  const remainingChallengesCount = useMemo(() => {
+    const cycle = profileGameVars?.oracle_custom_cycle
+    if (!cycle || !cycle.challenges) return 0
+    return cycle.challenges.filter((c: any) => !c.used).length
+  }, [profileGameVars])
+
   if (loading) return (
     <div className="h-96 flex flex-col items-center justify-center gap-4 opacity-50">
       <Zap className="w-10 h-10 animate-pulse text-cyan-500" />
@@ -1119,17 +1410,99 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   )
 
   return (
-    <div className="w-full flex flex-col gap-10">
-      {/* Header Console */}
-      <div className="flex items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="w-5 h-5 text-cyan-500">
-            <Zap className="w-full h-full fill-current" />
-          </motion.div>
-          <h3 className="text-sm font-black uppercase tracking-[0.4em] text-cyan-500">System Execution Interface</h3>
-        </div>
-        <div className={`px-6 py-2 rounded-full text-sm font-black uppercase tracking-[0.2em] ${appTheme === "dark" ? "bg-white/5 text-slate-400 border border-white/5" : "bg-white text-slate-500 shadow-lg border border-slate-100"}`}>
-          {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+    <div className={`relative w-full min-h-screen flex flex-col gap-8 md:gap-10 pb-16 overflow-hidden font-sans transition-colors duration-500 ${
+      appTheme === 'dark'
+        ? 'bg-[#070913] text-slate-100'
+        : appTheme === 'solarized'
+        ? 'bg-[#FAF7F0] text-orange-950'
+        : 'bg-white text-slate-800'
+    }`}>
+      {/* TEXTURAS MÍSTICAS Y OVERLAYS ORGÁNICOS DE PIEDRA/GRANITO DE ISHA */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay" style={{
+        backgroundImage: appTheme === 'dark'
+          ? `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`
+          : `radial-gradient(circle at 1px 1px, black 1px, transparent 0)`,
+        backgroundSize: '24px 24px'
+      }} />
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+      }} />
+
+      {/* HEADER BANNER CON NIEBLA MÍSTICA DE LAS COLINAS DE VELLIANGIRI */}
+      <div className={`relative w-full h-[280px] md:h-[340px] overflow-hidden flex flex-col justify-end px-6 md:px-8 pb-6 border-b transition-colors duration-500 ${
+        appTheme === 'dark'
+          ? 'border-white/5'
+          : appTheme === 'solarized'
+          ? 'border-orange-200/50'
+          : 'border-slate-200/60'
+      }`}>
+        {/* Imagen panorámica de las montañas de Velliangiri */}
+        <img 
+          src="/velliangiri_hills.png" 
+          alt="Velliangiri Mountains under mist"
+          className={`absolute inset-0 w-full h-full object-cover scale-105 pointer-events-none transition-all duration-1000 ${
+            appTheme === 'dark'
+              ? 'opacity-25 filter grayscale contrast-125 brightness-75'
+              : appTheme === 'solarized'
+              ? 'opacity-20 filter sepia contrast-100 brightness-110'
+              : 'opacity-[0.12] filter grayscale contrast-75 brightness-125'
+          }`}
+        />
+        {/* Máscara de gradientes para fundir la imagen con el fondo de piedra oscura */}
+        <div className={`absolute inset-0 bg-gradient-to-t pointer-events-none ${
+          appTheme === 'dark'
+            ? 'from-[#070913] via-transparent to-[#070913]/30'
+            : appTheme === 'solarized'
+            ? 'from-[#FAF7F0] via-transparent to-[#FAF7F0]/30'
+            : 'from-white via-transparent to-white/30'
+        }`} />
+        
+        {/* Contenido flotante dentro del banner */}
+        <div className="relative z-10 w-full flex flex-col md:flex-row md:items-end justify-between gap-4 mt-auto">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="w-5 h-5 text-orange-500">
+                <Sparkles className="w-full h-full fill-current opacity-80" />
+              </motion.div>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400">ISHA LIFE ALIGNMENT CONSOLE</span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-[1000] tracking-tighter uppercase italic text-slate-100 font-serif-temple">
+              El Oráculo
+            </h1>
+            <p className="text-[10px] font-bold text-slate-400 max-w-xl uppercase tracking-widest mt-2">
+              &ldquo;La vida no es un problema que resolver, sino un misterio que vivir y experimentar en su máxima intensidad.&rdquo; — Sadhguru
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={toggleChallenges}
+              className={`px-4 py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                showChallenges
+                  ? appTheme === 'dark'
+                    ? "bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
+                    : "bg-orange-100 border-orange-300 text-orange-700 hover:bg-orange-200"
+                  : appTheme === 'dark'
+                  ? "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                  : appTheme === 'solarized'
+                  ? "bg-orange-50 border-orange-200 text-orange-850 hover:bg-orange-100"
+                  : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+              }`}
+              title={showChallenges ? "Ocultar Forja de Desafíos" : "Mostrar Forja de Desafíos"}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>{showChallenges ? "🏆 Ocultar Desafíos" : "🏆 Activar Desafíos"}</span>
+            </button>
+            <div className={`px-5 py-2.5 rounded-xl border text-xs font-black uppercase tracking-[0.2em] backdrop-blur-md ${
+              appTheme === 'dark'
+                ? 'bg-white/5 border-white/5 text-slate-300'
+                : appTheme === 'solarized'
+                ? 'bg-orange-100/50 border-orange-200/50 text-orange-950 shadow-sm'
+                : 'bg-slate-50 border-slate-200/60 text-slate-700 shadow-sm'
+            }`}>
+              {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1137,29 +1510,59 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`mx-6 p-8 md:p-10 rounded-[3rem] border-2 shadow-2xl relative overflow-hidden transition-all duration-500 ${
+        className={`mx-4 md:mx-6 p-5 md:p-8 rounded-2xl md:rounded-3xl border-2 shadow-2xl relative overflow-hidden transition-all duration-500 ${
           performancePactData.isWeekend
             ? performancePactData.isGoalAchieved
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 shadow-emerald-500/[0.03]"
-              : "bg-amber-500/5 border-amber-500/20 text-amber-300 shadow-amber-500/[0.02]"
+              ? appTheme === 'dark'
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 shadow-emerald-500/[0.03]"
+                : appTheme === 'solarized'
+                ? "bg-emerald-100/40 border-emerald-500/30 text-emerald-950 shadow-emerald-500/[0.02]"
+                : "bg-emerald-50 border-emerald-200 text-emerald-900 shadow-emerald-500/[0.02]"
+              : appTheme === 'dark'
+              ? "bg-amber-500/5 border-amber-500/20 text-amber-300 shadow-amber-500/[0.02]"
+              : appTheme === 'solarized'
+              ? "bg-amber-100/30 border-amber-200 text-orange-950 shadow-amber-500/[0.01]"
+              : "bg-amber-50/60 border-amber-200 text-amber-900 shadow-amber-500/[0.01]"
             : performancePactData.isGoalAchieved
-              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300 shadow-cyan-500/[0.03]"
-              : "bg-rose-500/5 border-rose-500/20 text-rose-300 shadow-rose-500/[0.02]"
+              ? appTheme === 'dark'
+                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300 shadow-cyan-500/[0.03]"
+                : appTheme === 'solarized'
+                ? "bg-orange-100/50 border-orange-300/40 text-orange-950 shadow-orange-500/[0.02]"
+                : "bg-cyan-50 border-cyan-200 text-cyan-900 shadow-cyan-500/[0.02]"
+              : appTheme === 'dark'
+              ? "bg-orange-500/5 border-orange-500/20 text-orange-300 shadow-orange-500/[0.02]"
+              : appTheme === 'solarized'
+              ? "bg-orange-50 border-orange-200 text-orange-900/80 shadow-orange-500/[0.01]"
+              : "bg-slate-50 border-slate-200 text-slate-800 shadow-sm"
         }`}
       >
         {/* Glow Effects */}
         <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[80px] opacity-20 pointer-events-none ${
           performancePactData.isWeekend
             ? performancePactData.isGoalAchieved ? "bg-emerald-400" : "bg-amber-400"
-            : performancePactData.isGoalAchieved ? "bg-cyan-400" : "bg-rose-400"
+            : performancePactData.isGoalAchieved ? "bg-cyan-400" : "bg-orange-400"
         }`} />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-6">
             <div className={`w-16 h-16 rounded-[2rem] border-2 flex items-center justify-center animate-pulse flex-shrink-0 ${
               performancePactData.isWeekend
-                ? performancePactData.isGoalAchieved ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "bg-amber-500/20 border-amber-500/40 text-amber-400"
-                : performancePactData.isGoalAchieved ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400" : "bg-rose-500/20 border-rose-500/40 text-rose-400"
+                ? performancePactData.isGoalAchieved 
+                  ? appTheme === 'dark' 
+                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" 
+                    : "bg-emerald-250 border-emerald-400 text-emerald-850"
+                  : appTheme === 'dark'
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                  : "bg-amber-200 border-amber-400 text-amber-850"
+                : performancePactData.isGoalAchieved 
+                ? appTheme === 'dark'
+                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400" 
+                  : "bg-cyan-200 border-cyan-400 text-cyan-850"
+                : appTheme === 'dark'
+                ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                : appTheme === 'solarized'
+                ? "bg-orange-200 border-orange-400 text-orange-900"
+                : "bg-slate-200 border-slate-350 text-slate-700"
             }`}>
               <Trophy className="w-8 h-8" />
             </div>
@@ -1170,8 +1573,12 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 </span>
                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
                   performancePactData.isWeekend
-                    ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
-                    : "text-cyan-400 border-cyan-500/30 bg-cyan-500/10"
+                    ? appTheme === 'dark'
+                      ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
+                      : "text-amber-800 border-amber-300 bg-amber-100"
+                    : appTheme === 'dark'
+                    ? "text-cyan-400 border-cyan-500/30 bg-cyan-500/10"
+                    : "text-cyan-800 border-cyan-300 bg-cyan-100"
                 }`}>
                   {performancePactData.isWeekend ? "Modo Regeneración" : "Enfoque Absoluto"}
                 </span>
@@ -1197,7 +1604,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
           <div className="flex flex-col items-center md:items-end gap-3 flex-shrink-0 w-full md:w-auto">
             <div className="flex items-baseline gap-1">
-              <span className="text-6xl font-[1000] italic leading-none tracking-tighter">
+              <span className="text-5xl md:text-6xl font-[1000] italic leading-none tracking-tighter">
                 {performancePactData.completionRate}%
               </span>
               <span className="text-xs font-black opacity-50 uppercase tracking-wider">
@@ -1206,19 +1613,25 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             </div>
             
             {/* Cápsula de progreso premium */}
-            <div className="w-full md:w-48 h-3.5 bg-slate-500/10 rounded-full overflow-hidden border border-white/5 relative">
+            <div className={`w-full md:w-48 h-3.5 rounded-full overflow-hidden border relative transition-colors duration-500 ${
+              appTheme === 'dark'
+                ? 'bg-slate-500/10 border-white/5'
+                : appTheme === 'solarized'
+                ? 'bg-orange-950/10 border-orange-200/50'
+                : 'bg-slate-200 border-slate-300'
+            }`}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(performancePactData.completionRate, 100)}%` }}
                 className={`h-full shadow-[0_0_15px_rgba(255,255,255,0.1)] rounded-full ${
                   performancePactData.isWeekend
                     ? performancePactData.isGoalAchieved ? "bg-emerald-500" : "bg-amber-500"
-                    : performancePactData.isGoalAchieved ? "bg-cyan-500" : "bg-rose-500"
+                    : performancePactData.isGoalAchieved ? "bg-cyan-500" : "bg-orange-500"
                 }`}
               />
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
-              {performancePactData.completedTasks} de {performancePactData.totalTasks} tareas completadas
+              {performancePactData.completedTasks} de {performancePactData.totalTasks} bloques de horario completados
             </span>
 
             {/* ⚔️ BOTÓN SELLAR DÍA */}
@@ -1236,7 +1649,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       placeholder="Nota emocional del día (opcional)..."
                       value={emotionalNote}
                       onChange={(e) => setEmotionalNote(e.target.value)}
-                      className="w-full bg-black/40 text-[11px] font-semibold text-slate-300 px-4 py-2.5 rounded-xl border border-white/10 focus:outline-none focus:border-cyan-500 placeholder:text-slate-600"
+                      className={`w-full text-[11px] font-semibold px-4 py-2.5 rounded-xl border focus:outline-none transition-all duration-300 ${
+                        appTheme === 'dark'
+                          ? 'bg-black/40 text-slate-300 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                          : appTheme === 'solarized'
+                          ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-400'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-450'
+                      }`}
                     />
                   </motion.div>
                 )}
@@ -1244,7 +1663,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowEmotionalInput(!showEmotionalInput)}
-                  className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all text-[10px] cursor-pointer"
+                  className={`px-3 py-3 rounded-xl border transition-all text-[10px] cursor-pointer ${
+                    appTheme === 'dark'
+                      ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                      : appTheme === 'solarized'
+                      ? 'bg-orange-100/50 border-orange-300/40 text-orange-850 hover:bg-orange-200/50'
+                      : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                  }`}
                   title="Añadir nota emocional"
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -1255,7 +1680,11 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer shadow-lg ${
                     performancePactData.isGoalAchieved
                       ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-cyan-500/30 hover:scale-[1.02] active:scale-[0.98]'
-                      : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'
+                      : appTheme === 'dark'
+                      ? 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'
+                      : appTheme === 'solarized'
+                      ? 'bg-orange-100/40 border border-orange-200 text-orange-700/60'
+                      : 'bg-slate-100 border border-slate-200 text-slate-400'
                   }`}
                 >
                   {sealingDay
@@ -1372,14 +1801,18 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       </AnimatePresence>
 
       {/* ================= DESAFÍO MULTIMEDIA DEL ORÁCULO (2 DÍAS) ================= */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`mx-6 p-8 md:p-10 rounded-[3rem] border relative overflow-hidden transition-all shadow-2xl ${
-          appTheme === 'dark' ? 'bg-slate-900/40 border-white/5' : appTheme === 'solarized' ? 'bg-orange-50/80 border-orange-200' : 'bg-white border-slate-100'
-        }`}
-      >
-        <CardBackgroundEffect color="bg-indigo-500" />
+      <AnimatePresence>
+        {showChallenges && (
+          <motion.div
+            initial={{ opacity: 0, y: 15, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: 15, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`mx-6 p-8 md:p-10 rounded-[3rem] border relative overflow-hidden transition-all shadow-2xl overflow-hidden ${
+              appTheme === 'dark' ? 'bg-slate-900/40 border-white/5' : appTheme === 'solarized' ? 'bg-orange-50/80 border-orange-200' : 'bg-white border-slate-100'
+            }`}
+          >
+            <CardBackgroundEffect color="bg-indigo-500" />
         
         {/* LÓGICA DE RENDERIZACIÓN SEGÚN EL CICLO PERSONALIZADO */}
         {!profileGameVars?.oracle_custom_cycle?.active ? (
@@ -1417,6 +1850,23 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
         ) : (
           // 2. ESTADO DE CICLO ACTIVO
           <div className="flex flex-col gap-6 relative z-10">
+            {remainingChallengesCount <= 4 && remainingChallengesCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-wider flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 animate-pulse flex-shrink-0" />
+                  <span>
+                    ⚠️ Alerta de la Forja: Solo quedan {remainingChallengesCount} desafíos en tu caja fuerte. ¡Recarga nuevos retos pronto!
+                  </span>
+                </div>
+                <div className="text-[10px] opacity-70">
+                  (Pídemelo por chat en la siguiente sesión)
+                </div>
+              </motion.div>
+            )}
             {/* Header del Ciclo */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-white/5">
               <div>
@@ -1424,35 +1874,112 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 <h3 className={`text-xl font-[1000] uppercase tracking-tighter mt-1 ${appTheme === 'dark' ? 'text-slate-100' : appTheme === 'solarized' ? 'text-orange-950' : 'text-slate-800'}`}>Ciclo de 12 Desafíos Activo</h3>
               </div>
               
-              {/* Tracker de Gemas del Ciclo */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Pacto de Honor: {profileGameVars.oracle_custom_cycle.completed_count || 0} de 12 Superados</span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {profileGameVars.oracle_custom_cycle.challenges.map((c: any) => {
-                    const isCurrent = activeChallenge && activeChallenge.idea_index === c.id
-                    return (
-                      <div
-                        key={c.id}
-                        className={`w-7 h-7 rounded-xl border flex items-center justify-center text-[9px] font-black tracking-tighter transition-all duration-300 relative group cursor-help ${
-                          c.completed
-                            ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
-                            : isCurrent
-                              ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-400 animate-pulse border-2"
-                              : "bg-black/40 border-white/5 text-slate-600"
-                        }`}
-                      >
-                        {c.completed ? "✓" : c.id}
-                        
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 rounded-xl bg-black/95 border border-white/10 text-left pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 shadow-2xl backdrop-blur-md">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400 block mb-1">Desafío #{c.id}</span>
-                          <h5 className="text-[10px] font-black text-slate-200 uppercase tracking-wide truncate">{c.title}</h5>
-                          <p className="text-[9px] font-medium text-slate-400 mt-1 leading-normal line-clamp-2">{c.description}</p>
-                        </div>
+              {/* Tracker de Gemas del Ciclo - Rediseñado a un dropdown premium e interactivo para ahorrar espacio */}
+              <div className="relative">
+                {/* Overlay transparente para cerrar al hacer clic afuera */}
+                {isCycleDropdownOpen && (
+                  <div 
+                    className="fixed inset-0 z-40 cursor-default" 
+                    onClick={() => setIsCycleDropdownOpen(false)} 
+                  />
+                )}
+
+                <button
+                  onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-white/10 bg-black/40 hover:bg-black/60 text-slate-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative z-50 select-none"
+                >
+                  <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Pacto: {profileGameVars.oracle_custom_cycle.completed_count || 0}/12 Completados</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-300 ${isCycleDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {isCycleDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-80 rounded-2xl border border-white/10 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-50"
+                      style={{ background: 'linear-gradient(135deg, #0c1426 0%, #080d19 50%, #04060c 100%)' }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5" />
+                          Mapa de Forja
+                        </span>
+                        <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
+                          {profileGameVars.oracle_custom_cycle.completed_count || 0} / 12
+                        </span>
                       </div>
-                    )
-                  })}
-                </div>
+
+                      <div className="border-b border-white/5 mb-3" />
+
+                      {/* Lista de Retos compacta y súper intuitiva */}
+                      <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-indigo-500/20">
+                        {profileGameVars.oracle_custom_cycle.challenges.map((c: any) => {
+                          const isCurrent = activeChallenge && activeChallenge.idea_index === c.id
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => {
+                                const masterC = masterChallenges.find(mc => mc.id === c.id)
+                                if (masterC) {
+                                  setSelectedDetailChallenge(masterC)
+                                  setIsDetailModalOpen(true)
+                                } else {
+                                  setSelectedDetailChallenge({
+                                    id: c.id,
+                                    title: c.title,
+                                    duration: "Lunes y Martes (2 días)",
+                                    level: "Intermedio",
+                                    stack: "n8n + Supabase + IA",
+                                    what_to_build: c.description || "Desafío de automatización y desarrollo.",
+                                    problem_solved: "Por definir en la forja de retos.",
+                                    markdown_content: `# 🐾 Reto #${c.id} — ${c.title}\n\n**Duración:** 2 días\n**Nivel:** Intermedio\n\n---\n\n## ¿Qué vas a construir?\n\n${c.description || "Desafío de automatización y desarrollo."}`
+                                  })
+                                  setIsDetailModalOpen(true)
+                                }
+                                setIsCycleDropdownOpen(false) // Cerrar dropdown al abrir el modal
+                              }}
+                              className={`w-full text-left p-2 rounded-xl border flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer ${
+                                c.completed
+                                  ? "bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10"
+                                  : isCurrent
+                                    ? "bg-indigo-500/15 border-indigo-500/30 hover:bg-indigo-500/20"
+                                    : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className={`w-5 h-5 rounded-lg border flex items-center justify-center text-[9px] font-black flex-shrink-0 ${
+                                  c.completed
+                                    ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]"
+                                    : isCurrent
+                                      ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-400 animate-pulse border-2"
+                                      : "bg-black/40 border-white/10 text-slate-500"
+                                }`}>
+                                  {c.completed ? "✓" : c.id}
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-wide truncate ${
+                                  c.completed
+                                    ? "text-cyan-400"
+                                    : isCurrent
+                                      ? "text-indigo-300 font-extrabold"
+                                      : "text-slate-400"
+                                }`}>
+                                  {c.title}
+                                </span>
+                              </div>
+                              <span className="text-[7px] font-black uppercase tracking-wider text-slate-500 flex-shrink-0">
+                                {c.completed ? "Listo" : isCurrent ? "En Curso" : "Sellado"}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -1524,8 +2051,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             ) : (
               // 2.C RETO MULTIMEDIA ACTIVO
               <div className="flex flex-col gap-6">
-                {/* Header del Reto Activo */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4 border-b border-white/5">
+                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4 border-b ${appTheme === 'dark' ? 'border-white/5' : appTheme === 'solarized' ? 'border-orange-200/50' : 'border-slate-200'}`}>
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                       <Video className="w-6 h-6 animate-pulse" />
@@ -1533,8 +2059,14 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     <div>
                       <div className="flex items-center gap-2.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-400">Reto Activo (Ciclo 48 Horas)</span>
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border bg-black/40 ${
-                          countdownText.includes("EXPIRADO") ? "text-rose-400 border-rose-500/30 animate-bounce" : "text-amber-400 border-amber-500/30"
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border transition-all duration-300 ${
+                          countdownText.includes("EXPIRADO") 
+                            ? "text-rose-400 border-rose-500/30 bg-rose-500/10 animate-bounce" 
+                            : appTheme === 'dark'
+                            ? "text-amber-400 border-amber-500/30 bg-black/40"
+                            : appTheme === 'solarized'
+                            ? "text-orange-950 border-orange-300 bg-orange-100"
+                            : "text-slate-800 border-slate-350 bg-slate-100"
                         }`}>
                           {countdownText}
                         </span>
@@ -1547,10 +2079,10 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-[1000] italic text-slate-100">{challengeProgress}%</span>
+                      <span className={`text-4xl font-[1000] italic ${appTheme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>{challengeProgress}%</span>
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Listo</span>
                     </div>
-                    <div className="w-40 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div className={`w-40 h-2 rounded-full overflow-hidden border ${appTheme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-slate-200 border-slate-300'}`}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${challengeProgress}%` }}
@@ -1561,11 +2093,50 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 </div>
 
                 {/* Ficha Descriptiva */}
-                <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Misión de Automatización</span>
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-300 leading-relaxed">
-                    {activeChallenge.description}
-                  </p>
+                <div className={`p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-500 ${
+                  appTheme === 'dark'
+                    ? 'bg-black/40 border-white/5 text-slate-200'
+                    : appTheme === 'solarized'
+                    ? 'bg-orange-100/60 border-orange-200/80 text-orange-950'
+                    : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}>
+                  <div className="flex-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Misión de Automatización</span>
+                    <p className="text-xs font-black uppercase tracking-wider opacity-90 leading-relaxed">
+                      {activeChallenge.description}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const masterC = masterChallenges.find(mc => mc.id === activeChallenge.idea_index)
+                      if (masterC) {
+                        setSelectedDetailChallenge(masterC)
+                        setIsDetailModalOpen(true)
+                      } else {
+                        setSelectedDetailChallenge({
+                          id: activeChallenge.idea_index,
+                          title: activeChallenge.title,
+                          duration: "Lunes y Martes (2 días)",
+                          level: "Intermedio",
+                          stack: "n8n + Supabase + IA",
+                          what_to_build: activeChallenge.description || "Desafío de automatización y desarrollo.",
+                          problem_solved: "Por definir en la forja de retos.",
+                          markdown_content: `# 🐾 Reto #${activeChallenge.idea_index} — ${activeChallenge.title}\n\n**Duración:** 2 días\n**Nivel:** Intermedio\n\n---\n\n## ¿Qué vas a construir?\n\n${activeChallenge.description || "Desafío de automatización y desarrollo."}`
+                        })
+                        setIsDetailModalOpen(true)
+                      }
+                    }}
+                    className={`flex-shrink-0 px-4 py-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 self-start md:self-auto cursor-pointer ${
+                      appTheme === 'dark'
+                        ? 'border-indigo-500/30 hover:border-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'
+                        : appTheme === 'solarized'
+                        ? 'border-indigo-300 hover:border-indigo-400 bg-indigo-100 hover:bg-indigo-200 text-indigo-900'
+                        : 'border-indigo-200 hover:border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Ver Manual del Desafío
+                  </button>
                 </div>
 
                 {/* Checklist Multimedia */}
@@ -1586,15 +2157,27 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                         onClick={() => handleToggleChallengeStep(step.field, isChecked)}
                         className={`p-4 rounded-2xl border text-left flex items-start gap-4 transition-all duration-300 cursor-pointer ${
                           isChecked 
-                            ? "bg-slate-100/5 border-emerald-500/30 hover:bg-slate-100/10" 
-                            : "bg-black/30 border-white/5 hover:border-white/10 hover:bg-black/50"
+                            ? appTheme === 'dark'
+                              ? "bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-300" 
+                              : appTheme === 'solarized'
+                              ? "bg-emerald-100/40 border-emerald-400/50 text-emerald-950"
+                              : "bg-emerald-50 border-emerald-300 text-emerald-900"
+                            : appTheme === 'dark'
+                            ? "bg-black/30 border-white/5 hover:border-white/10 hover:bg-black/50 text-slate-350"
+                            : appTheme === 'solarized'
+                            ? "bg-orange-100/30 border-orange-200 hover:border-orange-355 hover:bg-orange-100/50 text-orange-950"
+                            : "bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100/80 text-slate-700"
                         }`}
                       >
-                        <div className={`mt-0.5 flex-shrink-0 ${isChecked ? "text-emerald-400" : "text-slate-600"}`}>
+                        <div className={`mt-0.5 flex-shrink-0 ${isChecked ? "text-emerald-400" : "text-slate-500"}`}>
                           {isChecked ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                         </div>
                         <div>
-                          <h4 className={`text-xs font-black uppercase tracking-wider ${isChecked ? "text-slate-100 line-through opacity-50" : "text-slate-200"}`}>
+                          <h4 className={`text-xs font-black uppercase tracking-wider ${
+                            isChecked 
+                              ? "line-through opacity-50 text-emerald-600 dark:text-emerald-400" 
+                              : appTheme === 'dark' ? "text-slate-200" : "text-slate-800"
+                          }`}>
                             {step.label}
                           </h4>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">
@@ -1607,9 +2190,9 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 </div>
 
                 {/* Enlaces y Documentación */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t ${appTheme === 'dark' ? 'border-white/5' : 'border-slate-200'}`}>
                   <div className="flex flex-col gap-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Documentación de Victoria</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Documentación de Victoria</h4>
                     
                     <div className="flex flex-col gap-3">
                       <div>
@@ -1623,7 +2206,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                             placeholder="https://github.com/..."
                             value={challengeGithubUrl}
                             onChange={(e) => setChallengeGithubUrl(e.target.value)}
-                            className="bg-black/60 text-xs text-slate-200 font-bold pl-11 pr-4 py-3 rounded-xl border border-white/10 w-full focus:outline-none focus:border-cyan-500"
+                            className={`text-xs font-bold pl-11 pr-4 py-3 rounded-xl border w-full focus:outline-none transition-all duration-300 ${
+                              appTheme === 'dark'
+                                ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                                : appTheme === 'solarized'
+                                ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-400'
+                                : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
+                            }`}
                           />
                         </div>
                       </div>
@@ -1631,13 +2220,19 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       <div>
                         <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Video de Grabación / Publicación URL</label>
                         <div className="relative">
-                          <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                          <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-555" />
                           <input
                             type="url"
                             placeholder="https://youtube.com/watch?v=... o Drive"
                             value={challengeVideoUrl}
                             onChange={(e) => setChallengeVideoUrl(e.target.value)}
-                            className="bg-black/60 text-xs text-slate-200 font-bold pl-11 pr-4 py-3 rounded-xl border border-white/10 w-full focus:outline-none focus:border-cyan-500"
+                            className={`text-xs font-bold pl-11 pr-4 py-3 rounded-xl border w-full focus:outline-none transition-all duration-300 ${
+                              appTheme === 'dark'
+                                ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                                : appTheme === 'solarized'
+                                ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-400'
+                                : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
+                            }`}
                           />
                         </div>
                       </div>
@@ -1645,26 +2240,36 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Notas de Vibecoding y Aprendizaje</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Notas de Vibecoding y Aprendizaje</h4>
                     <textarea
                       placeholder="Escribe aquí las lecciones clave aprendidas forjando este flujo..."
                       value={challengeNotes}
                       onChange={(e) => setChallengeNotes(e.target.value)}
                       rows={4}
-                      className="bg-black/60 text-xs text-slate-200 font-medium p-4 rounded-xl border border-white/10 w-full focus:outline-none focus:border-cyan-500 resize-none h-full"
+                      className={`text-xs font-medium p-4 rounded-xl border w-full focus:outline-none resize-none h-full transition-all duration-300 ${
+                        appTheme === 'dark'
+                          ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                          : appTheme === 'solarized'
+                          ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-400'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Controles de Entrega */}
-                <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/5">
+                <div className={`flex items-center justify-between gap-4 pt-4 border-t ${appTheme === 'dark' ? 'border-white/5' : 'border-slate-200'}`}>
                   <button
                     onClick={() => {
                       if (confirm("¿Estás seguro de que deseas abandonar este reto? Se perderá el avance actual.")) {
                         setActiveChallenge(null)
                       }
                     }}
-                    className="px-5 py-3 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                    className={`px-5 py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                      appTheme === 'dark'
+                        ? 'border-rose-500/20 text-rose-400 hover:bg-rose-500/10'
+                        : 'border-rose-300 text-rose-700 hover:bg-rose-100'
+                    }`}
                   >
                     Rendirse y Cancelar
                   </button>
@@ -1673,7 +2278,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     <button
                       onClick={handleSaveChallengeMeta}
                       disabled={actionLoading !== null}
-                      className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5"
+                      className={`px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 ${
+                        appTheme === 'dark'
+                          ? 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white'
+                          : appTheme === 'solarized'
+                          ? 'bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-200/50'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                      }`}
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>Guardar Progreso</span>
@@ -1693,7 +2304,9 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
             )}
           </div>
         )}
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
 
@@ -1830,7 +2443,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
         )}
       </AnimatePresence>
 
-      <div className="space-y-24">
+      <div className="space-y-16 md:space-y-20">
         {Object.entries(
           blocks.reduce((acc, block) => {
             if (!acc[block.category]) acc[block.category] = []
@@ -1842,25 +2455,27 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           const CatIcon = getIconByCategory(category)
 
           return (
-            <div key={category} className="space-y-16 pt-16 md:pt-24 first:pt-0">
+            <div key={category} className="pt-12 md:pt-16 first:pt-6 md:first:pt-10">
               {/* Category Header */}
-              <div className="flex items-center gap-6 px-6">
-                <div className={`flex items-center gap-3 px-8 py-3 rounded-full border-2 ${catTheme.bg}`}>
-                  <CatIcon className="w-5 h-5" />
-                  <h3 className="text-xl font-[1000] uppercase italic tracking-widest leading-none mt-1">
+              <div className="flex items-center gap-6 px-4 md:px-6 mb-6 md:mb-8">
+                <div className={`flex items-center gap-2 md:gap-3 px-5 md:px-8 py-2.5 md:py-3 rounded-full border-2 ${catTheme.bg}`}>
+                  <CatIcon className="w-4 h-4 md:w-5 md:h-5" />
+                  <h3 className="text-sm md:text-2xl lg:text-3xl font-[500] uppercase italic tracking-[0.15em] leading-none mt-1 font-serif-temple">
                     {category}
                   </h3>
                 </div>
                 <div className="flex-1 h-[2px] bg-current opacity-10 rounded-full" />
               </div>
 
-              <div className="space-y-16">
+              <div className="space-y-6 md:space-y-8">
                 {(catBlocks as any[]).map((block, index) => {
                   const blockTasks = tasks.filter(t => t.activity_name === block.activity_name)
                   const lastNoteForBlock = lastSessionNotes.find(t => t.activity_name === block.activity_name)
-                  const isCompleted = blockTasks.length > 0 && blockTasks.every(t => t.is_completed)
+                  const isDirectlyChecked = checkins.some(c => c.block_id === block.id)
+                  const isCompletedByTasks = blockTasks.length > 0 && blockTasks.every(t => t.is_completed)
+                  const isCompleted = isDirectlyChecked || isCompletedByTasks
                   const isActive = activeBlockId === block.id
-                  const progress = blockTasks.length > 0 ? (blockTasks.filter(t => t.is_completed).length / blockTasks.length) * 100 : 0
+                  const progress = isCompleted ? 100 : (blockTasks.length > 0 ? (blockTasks.filter(t => t.is_completed).length / blockTasks.length) * 100 : 0)
                   
                   // Formatear hora: 14:00:00 -> 02:00 pm o 2:00 pm
                   const formatTimeEs = (timeStr: string) => {
@@ -1880,7 +2495,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   const getBadgeClasses = (cat: string) => {
                     if (cat.includes('Mañana')) return "text-amber-500 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"
                     if (cat.includes('Bloque') || cat.includes('Trabajo')) return "text-cyan-500 dark:text-cyan-400 bg-cyan-500/10 border-cyan-500/20"
-                    if (cat.includes('Tarde')) return "text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    if (cat.includes('Tarde')) return "text-orange-500 dark:text-orange-400 bg-orange-500/10 border-orange-500/20"
                     return "text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 border-indigo-500/20"
                   }
 
@@ -1925,30 +2540,52 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   }
 
                   return (
-                    <motion.div 
-                      key={block.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`relative flex gap-3 md:gap-10 group ${isActive ? "z-10" : "z-0"}`}
-                    >
+                    <React.Fragment key={block.id}>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`relative flex gap-2 md:gap-6 group ${isActive ? "z-10" : "z-0"}`}
+                      >
                       {/* Timeline Connector */}
-                      <div className="flex flex-col items-center flex-shrink-0 pt-10 w-8 md:w-16">
-                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-[3px] md:border-4 transition-all duration-700 z-10 flex items-center justify-center ${
+                      <div className="flex flex-col items-center flex-shrink-0 pt-10 w-6 md:w-12">
+                        <div className={`w-4 h-4 md:w-6 md:h-6 rounded-full border-[2px] md:border-[3px] transition-all duration-700 z-10 flex items-center justify-center ${
                           isCompleted ? "bg-emerald-500 border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.8)]" : 
-                          (isActive ? `${bTheme.accent} border-white shadow-[0_0_40px_rgba(34,211,238,0.8)]` : "bg-transparent border-slate-700")
+                          isActive ? `${bTheme.accent} border-white shadow-[0_0_40px_rgba(34,211,238,0.8)]` : 
+                          appTheme === 'dark' ? "bg-transparent border-slate-700" :
+                          appTheme === 'solarized' ? "bg-transparent border-orange-350" : "bg-transparent border-slate-350"
                         }`}>
-                          {isCompleted && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
+                          {isCompleted && <CheckCircle2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-white" />}
                         </div>
                         {index < (catBlocks as any[]).length - 1 && (
-                          <div className={`w-[2px] md:w-[3px] flex-1 mt-4 rounded-full ${isCompleted ? "bg-emerald-500/30" : "bg-slate-800"}`} />
+                          <div className={`w-[2px] md:w-[3px] flex-1 mt-4 rounded-full ${
+                            isCompleted 
+                              ? "bg-emerald-500/30" 
+                              : appTheme === 'dark' 
+                              ? "bg-slate-800" 
+                              : appTheme === 'solarized' 
+                              ? "bg-orange-200/60" 
+                              : "bg-slate-200"
+                          }`} />
                         )}
                       </div>
 
                       {/* Main Block Card */}
-                      <div className={`flex-1 p-6 md:p-8 xl:p-10 rounded-[2.5rem] md:rounded-[3rem] border-2 transition-all duration-700 relative overflow-hidden group/card ${
-                        isActive ? "shadow-2xl shadow-cyan-500/10 scale-[1.02]" : "hover:scale-[1.01]"
-                      } ${isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : bTheme.bg}`}>
+                      <div className={`flex-1 p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 transition-all duration-700 relative overflow-hidden group/card ${
+                        isActive 
+                          ? appTheme === 'dark'
+                            ? "shadow-2xl shadow-cyan-500/10 scale-[1.02]" 
+                            : "shadow-lg shadow-orange-500/5 scale-[1.02]"
+                          : "hover:scale-[1.01]"
+                      } ${
+                        isCompleted 
+                          ? appTheme === 'dark'
+                            ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300" 
+                            : appTheme === 'solarized'
+                            ? "bg-emerald-100/35 border-emerald-300 text-emerald-950"
+                            : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                          : bTheme.bg
+                      }`}>
                         
                         <CardBackgroundEffect color={bTheme.accent} />
 
@@ -1968,14 +2605,26 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                             <motion.div 
                               initial={{ opacity: 0, y: -8 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-md"
+                              className={`flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
+                                appTheme === 'dark'
+                                  ? 'bg-black/40 border-white/5 text-slate-200'
+                                  : appTheme === 'solarized'
+                                  ? 'bg-orange-100/60 border-orange-200/80 text-orange-950'
+                                  : 'bg-slate-100 border-slate-200 text-slate-800'
+                              }`}
                             >
                               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 pl-2">Controles de Bloque</span>
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleMoveBlock(block.id, 'up')}
                                   disabled={actionLoading !== null}
-                                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 hover:text-cyan-400 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer"
+                                  className={`p-2 rounded-lg transition-all cursor-pointer ${
+                                    appTheme === 'dark'
+                                      ? 'bg-white/5 hover:bg-white/10 hover:text-cyan-400 text-slate-400'
+                                      : appTheme === 'solarized'
+                                      ? 'bg-orange-200/50 hover:bg-orange-200 hover:text-orange-900 text-orange-950'
+                                      : 'bg-slate-250 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
+                                  }`}
                                   title="Subir Bloque (Intercambiar Horas)"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -1986,7 +2635,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                 <button
                                   onClick={() => handleMoveBlock(block.id, 'down')}
                                   disabled={actionLoading !== null}
-                                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 hover:text-cyan-400 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer"
+                                  className={`p-2 rounded-lg transition-all cursor-pointer ${
+                                    appTheme === 'dark'
+                                      ? 'bg-white/5 hover:bg-white/10 hover:text-cyan-400 text-slate-400'
+                                      : appTheme === 'solarized'
+                                      ? 'bg-orange-200/50 hover:bg-orange-200 hover:text-orange-900 text-orange-950'
+                                      : 'bg-slate-250 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
+                                  }`}
                                   title="Bajar Bloque (Intercambiar Horas)"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -1994,16 +2649,34 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   </svg>
                                 </button>
 
-                                <div className="h-4 w-px bg-white/10 mx-1" />
+                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-350/50' : 'bg-slate-350'}`} />
 
                                 <button
                                   onClick={() => handleMakeBlockUniversal(block)}
                                   disabled={actionLoading !== null}
-                                  className="p-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5 px-3"
+                                  className={`p-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 px-3 ${
+                                    appTheme === 'dark'
+                                      ? 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300'
+                                      : appTheme === 'solarized'
+                                      ? 'bg-orange-200 hover:bg-orange-300 text-orange-950'
+                                      : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800'
+                                  }`}
                                   title="Hacer Universal (Copiar a L-V)"
                                 >
                                   <Globe className="w-3.5 h-3.5" />
                                   <span className="text-[8px] font-black uppercase tracking-widest hidden sm:inline">Hacer Universal</span>
+                                </button>
+
+                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-350/50' : 'bg-slate-350'}`} />
+
+                                <button
+                                  onClick={() => handleStartInsertBelow(block)}
+                                  disabled={actionLoading !== null}
+                                  className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5 px-3"
+                                  title="Inyectar Bloque Debajo"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span className="text-[8px] font-black uppercase tracking-widest hidden sm:inline">Inyectar Debajo</span>
                                 </button>
 
                                 <div className="h-4 w-px bg-white/10 mx-1" />
@@ -2015,6 +2688,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                     setEditingBlockStartTime(block.start_time.substring(0, 5))
                                     setEditingBlockEndTime(block.end_time.substring(0, 5))
                                     setEditingBlockCategory(block.category)
+                                    setEditingBlockPhrase(block.custom_phrase || "")
                                   }}
                                   className="p-2 rounded-lg bg-white/5 hover:bg-white/10 hover:text-cyan-400 transition-all cursor-pointer"
                                   title="Editar Bloque inline"
@@ -2090,6 +2764,19 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                     />
                                   </div>
                                 </div>
+
+                                <div className="md:col-span-3">
+                                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Frase / Cita de Enfoque (Opcional - Máx. 250 caracteres)</label>
+                                  <textarea
+                                    value={editingBlockPhrase}
+                                    onChange={(e) => setEditingBlockPhrase(e.target.value.slice(0, 250))}
+                                    placeholder="Escribe una frase inspiradora para este bloque..."
+                                    className="bg-black/60 text-xs text-slate-100 font-semibold py-3 px-4 rounded-xl border border-white/10 w-full focus:outline-none focus:border-cyan-500 resize-none h-20 leading-relaxed"
+                                  />
+                                  <div className="flex justify-end text-[8px] font-bold text-slate-500 tracking-widest uppercase mt-1">
+                                    {editingBlockPhrase.length} / 250
+                                  </div>
+                                </div>
                               </div>
 
                               <div className="flex justify-end gap-3 pt-2">
@@ -2135,15 +2822,15 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                 block.category.includes('Tarde') ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' :
                                 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
                               }`}>
-                                <Icon className={`w-8 h-8 md:w-10 md:h-10 ${isActive ? "animate-pulse" : ""}`} />
+                                <Icon className={`w-6 h-6 md:w-8 md:h-8 ${isActive ? "animate-pulse" : ""}`} />
                               </div>
-                              <h4 className="text-xl md:text-3xl lg:text-4xl font-[1000] uppercase italic tracking-tighter leading-tight break-words">
+                              <h4 className="text-lg md:text-xl lg:text-2xl font-[1000] uppercase italic tracking-tighter leading-tight break-words">
                                 {title}
                               </h4>
                             </div>
 
                             {/* Context/Sadhguru Quote Banner */}
-                            <div className={`p-6 md:p-8 rounded-3xl flex items-center gap-5 border shadow-md relative overflow-hidden ${
+                            <div className={`p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 border shadow-md relative overflow-hidden ${
                               appTheme === "dark" ? "bg-black/40 border-white/5" : "bg-white/60 border-black/5 backdrop-blur-sm"
                             }`}>
                               <div className={`absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] opacity-10 pointer-events-none ${
@@ -2160,13 +2847,13 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                 block.category.includes('Tarde') ? 'text-emerald-500 dark:text-emerald-400' :
                                 'text-indigo-500 dark:text-indigo-400'
                               }`}>
-                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 opacity-60 animate-pulse" />
+                                <Sparkles className="w-5 h-5 md:w-6 md:h-6 opacity-60 animate-pulse" />
                               </div>
 
-                              <p className={`flex-1 text-xs md:text-lg lg:text-xl font-[900] italic uppercase leading-relaxed tracking-tight relative z-10 ${
+                              <p className={`flex-1 text-xs md:text-sm lg:text-base font-[900] italic uppercase leading-relaxed tracking-tight relative z-10 ${
                                 appTheme === 'dark' ? 'text-slate-200' : 'text-slate-800'
                               }`}>
-                                "{getSadhguruPhrase(title, block.category, isActive)}"
+                                "{block.custom_phrase || getSadhguruPhrase(title, block.category, isActive)}"
                               </p>
                             </div>
                           </div>
@@ -2177,13 +2864,32 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
                           {/* --- EXECUTION SECTION --- */}
                           <div className="flex flex-col gap-6">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-4">
                               <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Protocol Execution List</span>
-                              {isCompleted && (
-                                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
-                                  <Trophy className="w-4 h-4 animate-bounce" /> Bloque Asegurado
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => toggleBlockCheckin(block.id, isCompleted)}
+                                  disabled={actionLoading !== null}
+                                  className={`px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] ${
+                                    isCompleted
+                                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                                  }`}
+                                  title={isCompleted ? "Desmarcar bloque completado" : "Asegurar/Sellar bloque manualmente"}
+                                >
+                                  {isCompleted ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span className="font-black text-emerald-400">Bloque Asegurado</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Circle className="w-3.5 h-3.5 opacity-60" />
+                                      <span>Sellar Bloque</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </div>
 
                             {lastNoteForBlock && (
@@ -2213,7 +2919,19 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                             <div className="space-y-4">
                               <AnimatePresence>
                                 {blockTasks.map(task => {
-                                  const daysPending = Math.floor((new Date().getTime() - new Date(task.original_date).getTime()) / (1000 * 3600 * 24))
+                                  const daysPending = (() => {
+                                    if (!task.original_date) return 0
+                                    try {
+                                      const [y, m, d] = task.original_date.split('-').map(Number)
+                                      const taskDate = new Date(y, m - 1, d)
+                                      const today = new Date()
+                                      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                                      const diff = todayMidnight.getTime() - taskDate.getTime()
+                                      return Math.max(0, Math.floor(diff / (1000 * 3600 * 24)))
+                                    } catch (e) {
+                                      return 0
+                                    }
+                                  })()
                                   return (
                                     <motion.div 
                                       key={task.id} 
@@ -2280,7 +2998,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                             </div>
                                             
                                             {/* Acciones de la tarea */}
-                                            <div className="flex items-center gap-1 md:opacity-0 group-hover/task:opacity-100 transition-all duration-300 flex-shrink-0">
+                                            <div className="flex items-center gap-1 opacity-70 md:opacity-0 md:group-hover/task:opacity-100 transition-all duration-300 flex-shrink-0">
                                               <button 
                                                 onClick={() => {
                                                   setExpandedNoteTaskId(expandedNoteTaskId === task.id ? null : task.id)
@@ -2382,7 +3100,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   className={`p-3 rounded-xl transition-all flex-shrink-0 ${
                                     block.category.includes('Mañana') ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/30' :
                                     (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-500/30' :
-                                    block.category.includes('Tarde') ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/30' :
+                                    block.category.includes('Tarde') ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border border-orange-500/30' :
                                     'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white border border-indigo-500/30'
                                   } flex items-center justify-center`}
                                 >
@@ -2394,6 +3112,143 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                         </div>
                       </div>
                     </motion.div>
+
+                    {/* Formulario de inyección inline debajo del bloque */}
+                    <AnimatePresence>
+                      {insertingBelowBlockId === block.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, y: -10 }}
+                          animate={{ opacity: 1, height: "auto", y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -10 }}
+                          className={`ml-6 md:ml-12 p-6 rounded-3xl backdrop-blur-md flex flex-col gap-6 w-full relative z-20 my-4 border transition-all duration-300 ${
+                            appTheme === 'dark'
+                              ? 'bg-black/40 border-white/10'
+                              : appTheme === 'solarized'
+                              ? 'bg-orange-100/80 border-orange-200/80 shadow-md text-orange-950'
+                              : 'bg-slate-50 border-slate-200 shadow-md text-slate-800'
+                          }`}
+                        >
+                          <div className={`flex items-center justify-between pb-3 border-b ${
+                            appTheme === 'dark' ? 'border-white/5' : appTheme === 'solarized' ? 'border-orange-200/50' : 'border-slate-200'
+                          }`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Inyectar Bloque Protocolario</span>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Debajo de: {block.activity_name}</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="md:col-span-2">
+                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Nombre de la Actividad</label>
+                              <input
+                                type="text"
+                                value={insertBelowName}
+                                onChange={(e) => setInsertBelowName(e.target.value)}
+                                placeholder="Ej: Posicionamiento LinkedIn"
+                                className={`text-sm font-semibold py-2.5 px-4 rounded-xl border w-full focus:outline-none uppercase tracking-wide transition-all duration-300 ${
+                                  appTheme === 'dark'
+                                    ? 'bg-black/60 text-slate-100 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                                    : appTheme === 'solarized'
+                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-450'
+                                    : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
+                                }`}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Fase del Día</label>
+                              <select
+                                value={insertBelowCategory}
+                                onChange={(e) => setInsertBelowCategory(e.target.value)}
+                                className={`text-xs font-black py-3 px-4 rounded-xl border w-full focus:outline-none uppercase tracking-widest transition-all duration-300 ${
+                                  appTheme === 'dark'
+                                    ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500'
+                                    : appTheme === 'solarized'
+                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500'
+                                    : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500'
+                                }`}
+                              >
+                                <option value="Mañana">Mañana</option>
+                                <option value="Bloque Trabajo">Bloque Trabajo</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noche">Noche</option>
+                              </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 md:col-span-3">
+                              <div>
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Hora de Inicio</label>
+                                <input
+                                  type="time"
+                                  value={insertBelowStartTime}
+                                  onChange={(e) => setInsertBelowStartTime(e.target.value)}
+                                  className={`text-xs font-bold py-2.5 px-4 rounded-xl border w-full focus:outline-none transition-all duration-300 ${
+                                    appTheme === 'dark'
+                                      ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500'
+                                      : appTheme === 'solarized'
+                                      ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500'
+                                      : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500'
+                                  }`}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Hora de Fin</label>
+                                <input
+                                  type="time"
+                                  value={insertBelowEndTime}
+                                  onChange={(e) => setInsertBelowEndTime(e.target.value)}
+                                  className={`text-xs font-bold py-2.5 px-4 rounded-xl border w-full focus:outline-none transition-all duration-300 ${
+                                    appTheme === 'dark'
+                                      ? 'bg-black/60 text-slate-200 border-white/10 focus:border-cyan-500'
+                                      : appTheme === 'solarized'
+                                      ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500'
+                                      : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500'
+                                  }`}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Frase / Cita de Enfoque (Opcional - Máx. 250 caracteres)</label>
+                              <textarea
+                                value={insertBelowPhrase}
+                                onChange={(e) => setInsertBelowPhrase(e.target.value.slice(0, 250))}
+                                placeholder="Escribe una frase inspiradora para este bloque..."
+                                className={`text-xs font-semibold py-3 px-4 rounded-xl border w-full focus:outline-none resize-none h-20 leading-relaxed transition-all duration-300 ${
+                                  appTheme === 'dark'
+                                    ? 'bg-black/60 text-slate-100 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
+                                    : appTheme === 'solarized'
+                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-450'
+                                    : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
+                                }`}
+                              />
+                              <div className="flex justify-end text-[8px] font-bold text-slate-500 tracking-widest uppercase mt-1">
+                                {insertBelowPhrase.length} / 250
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end gap-3 pt-2">
+                            <button
+                              onClick={() => setInsertingBelowBlockId(null)}
+                              className={`px-5 py-2.5 border rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                                appTheme === 'dark'
+                                  ? 'border-slate-500/30 text-slate-400 hover:text-white bg-white/5'
+                                  : 'border-slate-300 text-slate-600 hover:bg-slate-100 bg-slate-50'
+                              }`}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={() => handleInsertBlockBelow(block)}
+                              disabled={actionLoading !== null}
+                              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-emerald-600/30"
+                            >
+                              {actionLoading === `insert-below-${block.id}` ? "Inyectando..." : "Confirmar Inyección"}
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -2626,6 +3481,202 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal de Detalle de Desafío Zen-Tech */}
+      <AnimatePresence>
+        {isDetailModalOpen && selectedDetailChallenge && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDetailModalOpen(false)}
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                appTheme === 'dark'
+                  ? 'bg-[#030712]/95'
+                  : appTheme === 'solarized'
+                  ? 'bg-[#1A1108]/90'
+                  : 'bg-slate-900/80'
+              }`}
+            />
+            
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className={`relative w-full max-w-3xl h-[85vh] border rounded-[2rem] flex flex-col overflow-hidden shadow-2xl z-10 transition-all duration-300 ${
+                appTheme === 'dark'
+                  ? 'border-white/10 text-slate-100'
+                  : appTheme === 'solarized'
+                  ? 'border-orange-200/50 text-orange-950 shadow-orange-950/5'
+                  : 'border-slate-200 text-slate-800 shadow-slate-200/10'
+              }`}
+              style={{
+                background: appTheme === 'dark'
+                  ? 'linear-gradient(135deg, #0c1426 0%, #080d19 50%, #04060c 100%)'
+                  : appTheme === 'solarized'
+                  ? 'linear-gradient(135deg, #FAF7F0 0%, #F4EFE6 50%, #EAE3D2 100%)'
+                  : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)'
+              }}
+            >
+              {/* Header con luz interna de acento */}
+              <div className={`p-6 md:p-8 pb-4 border-b relative flex-shrink-0 transition-colors duration-300 ${
+                appTheme === 'dark'
+                  ? 'border-white/5'
+                  : appTheme === 'solarized'
+                  ? 'border-orange-200/50'
+                  : 'border-slate-200/60'
+              }`}>
+                {/* Luz de fondo morado/cyan */}
+                <div className="absolute top-0 left-1/4 right-1/4 h-24 bg-gradient-to-r from-cyan-500/10 via-indigo-500/10 to-purple-500/10 blur-3xl pointer-events-none" />
+                
+                <div className="flex items-center justify-between relative z-10">
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">
+                    Ficha Técnica Desafío #{selectedDetailChallenge.id}
+                  </span>
+                  <button
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-md ${
+                      appTheme === 'dark'
+                        ? 'border-white/10 hover:border-white/20 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200'
+                        : appTheme === 'solarized'
+                        ? 'border-orange-200 hover:border-orange-300 bg-orange-100 hover:bg-orange-200 text-orange-850 hover:text-orange-950'
+                        : 'border-slate-200 hover:border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <h2 className={`text-xl md:text-2xl font-[1000] uppercase tracking-tighter mt-2 relative z-10 ${
+                  appTheme === 'dark'
+                    ? 'text-slate-100'
+                    : appTheme === 'solarized'
+                    ? 'text-orange-950'
+                    : 'text-slate-800'
+                }`}>
+                  {selectedDetailChallenge.title}
+                </h2>
+                
+                {/* Insignias de Reto */}
+                <div className="flex flex-wrap items-center gap-2 mt-4 relative z-10">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
+                    ⏳ {selectedDetailChallenge.duration || "2 días"}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                    🔥 {selectedDetailChallenge.level || "Intermedio"}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-purple-500/20 bg-purple-500/10 text-purple-400">
+                    🛠️ {selectedDetailChallenge.stack || "n8n + Supabase"}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Cuerpo del Desafío (Scrollable) */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                {/* Fichas Técnicas Rápidas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    className={`p-5 rounded-2xl border shadow-inner transition-colors duration-300 ${
+                      appTheme === 'dark'
+                        ? 'border-cyan-500/20'
+                        : appTheme === 'solarized'
+                        ? 'border-orange-300/40'
+                        : 'border-cyan-200'
+                    }`}
+                    style={{ 
+                      backgroundColor: appTheme === 'dark' 
+                        ? '#090f1e' 
+                        : appTheme === 'solarized'
+                        ? '#F4EFE6'
+                        : '#F0F9FF' 
+                    }}
+                  >
+                    <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400">¿Qué vas a construir?</span>
+                    <p className={`text-[10px] font-bold uppercase tracking-wide leading-relaxed mt-2 text-justify ${
+                      appTheme === 'dark' ? 'text-slate-300' : appTheme === 'solarized' ? 'text-orange-900/90' : 'text-slate-600'
+                    }`}>
+                      {selectedDetailChallenge.what_to_build}
+                    </p>
+                  </div>
+                  
+                  <div 
+                    className={`p-5 rounded-2xl border shadow-inner transition-colors duration-300 ${
+                      appTheme === 'dark'
+                        ? 'border-purple-500/20'
+                        : appTheme === 'solarized'
+                        ? 'border-orange-300/40'
+                        : 'border-purple-200'
+                    }`}
+                    style={{ 
+                      backgroundColor: appTheme === 'dark' 
+                        ? '#090b14' 
+                        : appTheme === 'solarized'
+                        ? '#FAF7F0'
+                        : '#FAF5FF' 
+                    }}
+                  >
+                    <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">El problema real que resuelve</span>
+                    <p className={`text-[10px] font-bold uppercase tracking-wide leading-relaxed mt-2 text-justify ${
+                      appTheme === 'dark' ? 'text-slate-300' : appTheme === 'solarized' ? 'text-orange-900/90' : 'text-slate-600'
+                    }`}>
+                      {selectedDetailChallenge.problem_solved}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Divisor */}
+                <div className={`h-[1px] my-4 transition-colors duration-300 ${
+                  appTheme === 'dark' ? 'bg-white/5' : appTheme === 'solarized' ? 'bg-orange-200/50' : 'bg-slate-200'
+                }`} />
+                
+                {/* Contenido en Markdown Enriquecido */}
+                <div className="space-y-4">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-2">Instrucciones & Manual de Forja</span>
+                  <div 
+                    className={`p-6 rounded-2xl border space-y-4 shadow-md transition-colors duration-300 ${
+                      appTheme === 'dark'
+                        ? 'border-white/5 text-slate-300'
+                        : appTheme === 'solarized'
+                        ? 'border-orange-200/50 text-orange-950'
+                        : 'border-slate-200 text-slate-700'
+                    }`}
+                    style={{
+                      backgroundColor: appTheme === 'dark' ? '#05070c' : appTheme === 'solarized' ? '#FFFBEB' : '#FAFAFA'
+                    }}
+                  >
+                    {renderMarkdown(selectedDetailChallenge.markdown_content || "", appTheme)}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div 
+                className={`p-6 border-t flex justify-end flex-shrink-0 transition-colors duration-300 ${
+                  appTheme === 'dark'
+                    ? 'border-white/5'
+                    : appTheme === 'solarized'
+                    ? 'border-orange-200/50'
+                    : 'border-slate-200'
+                }`}
+                style={{
+                  backgroundColor: appTheme === 'dark' ? '#050810' : appTheme === 'solarized' ? '#F4EFE6' : '#f8fafc'
+                }}
+              >
+                <button
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-md shadow-black/50"
+                >
+                  Entendido, Guerrero ⚔️
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -2661,23 +3712,59 @@ function getIconByActivity(title: string, category: string) {
 }
 
 function getThemeByCategory(category: string, appTheme: string) {
-  const isDark = appTheme === "dark";
-  if (category.includes('Mañana')) return { 
-    bg: isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-100" : "bg-amber-50 border-amber-200 text-amber-900",
-    accent: "bg-amber-500" 
-  };
-  if (category.includes('Bloque') || category.includes('Trabajo')) return { 
-    bg: isDark ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-100" : "bg-cyan-50 border-cyan-200 text-cyan-900",
-    accent: "bg-cyan-500" 
-  };
-  if (category.includes('Tarde')) return { 
-    bg: isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-100" : "bg-emerald-50 border-emerald-200 text-emerald-900",
-    accent: "bg-emerald-500" 
-  };
-  return { 
-    bg: isDark ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-100" : "bg-indigo-50 border-indigo-200 text-indigo-900",
-    accent: "bg-indigo-500" 
-  };
+  if (appTheme === "dark") {
+    if (category.includes('Mañana')) return { 
+      bg: "bg-amber-500/10 border-amber-500/20 text-amber-100",
+      accent: "bg-amber-500" 
+    };
+    if (category.includes('Bloque') || category.includes('Trabajo')) return { 
+      bg: "bg-cyan-500/10 border-cyan-500/20 text-cyan-100",
+      accent: "bg-cyan-500" 
+    };
+    if (category.includes('Tarde')) return { 
+      bg: "bg-orange-500/10 border-orange-500/20 text-orange-100",
+      accent: "bg-orange-500" 
+    };
+    return { 
+      bg: "bg-indigo-500/10 border-indigo-500/20 text-indigo-100",
+      accent: "bg-indigo-500" 
+    };
+  } else if (appTheme === "solarized") {
+    if (category.includes('Mañana')) return { 
+      bg: "bg-amber-100/40 border-amber-300/40 text-orange-950",
+      accent: "bg-amber-600" 
+    };
+    if (category.includes('Bloque') || category.includes('Trabajo')) return { 
+      bg: "bg-cyan-100/30 border-cyan-300/35 text-orange-950",
+      accent: "bg-cyan-600" 
+    };
+    if (category.includes('Tarde')) return { 
+      bg: "bg-orange-100/40 border-orange-300/40 text-orange-950",
+      accent: "bg-orange-600" 
+    };
+    return { 
+      bg: "bg-indigo-100/30 border-indigo-300/35 text-orange-950",
+      accent: "bg-indigo-600" 
+    };
+  } else {
+    // Light mode
+    if (category.includes('Mañana')) return { 
+      bg: "bg-amber-50 border-amber-200 text-amber-900",
+      accent: "bg-amber-500" 
+    };
+    if (category.includes('Bloque') || category.includes('Trabajo')) return { 
+      bg: "bg-cyan-50 border-cyan-200 text-cyan-900",
+      accent: "bg-cyan-500" 
+    };
+    if (category.includes('Tarde')) return { 
+      bg: "bg-orange-50 border-orange-200 text-orange-900",
+      accent: "bg-orange-500" 
+    };
+    return { 
+      bg: "bg-indigo-50 border-indigo-200 text-indigo-900",
+      accent: "bg-indigo-500" 
+    };
+  }
 }
 
 const Laptop = ({ className }: { className?: string }) => <Briefcase className={className} />;
@@ -2783,7 +3870,30 @@ function DemonAltar({ theme }: { theme: string }) {
             .eq('user_id', user.id)
           if (refreshed) setStreaks(refreshed)
         } else {
-          setStreaks(data)
+          // Si el usuario quiere empezar hoy de cero pero la racha está en 1, 
+          // realizamos un auto-reset a 0 para corregir el desajuste de inicio.
+          let needUpdate = false
+          const updatedData = await Promise.all(data.map(async (d) => {
+            if (d.streak_days === 1) {
+              needUpdate = true
+              await supabase
+                .from('demon_streaks')
+                .update({ 
+                  streak_days: 0, 
+                  last_broken_at: null,
+                  updated_at: new Date(Date.now() - 86400000 * 2).toISOString()
+                })
+                .eq('id', d.id)
+              return { ...d, streak_days: 0, last_broken_at: null }
+            }
+            return d
+          }))
+          
+          if (needUpdate) {
+            setStreaks(updatedData)
+          } else {
+            setStreaks(data)
+          }
         }
       }
     } catch (err) {
@@ -2896,6 +4006,32 @@ function DemonAltar({ theme }: { theme: string }) {
     }
   }
 
+  const handleCleanReset = async (demonType: string) => {
+    setActionLoading(demonType + '-clean-reset')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('demon_streaks')
+        .update({ 
+          streak_days: 0, 
+          last_broken_at: null,
+          updated_at: new Date(Date.now() - 86400000 * 2).toISOString() // Past date to prevent checked/broken flags
+        })
+        .eq('user_id', user.id)
+        .eq('demon_type', demonType)
+
+      if (!error) {
+        await fetchStreaks()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const getDemonData = (type: string) => {
     const s = streaks.find(d => d.demon_type === type)
     const days = s?.streak_days || 0
@@ -2955,7 +4091,7 @@ function DemonAltar({ theme }: { theme: string }) {
   const rank = getWarriorRank(maxStreak)
 
   return (
-    <div className={`p-8 md:p-10 rounded-[3.5rem] border-2 shadow-2xl relative overflow-hidden transition-all duration-300 ${
+    <div className={`p-5 md:p-8 rounded-3xl border-2 shadow-2xl relative overflow-hidden transition-all duration-300 ${
       theme === "dark" ? "bg-black/40 border-red-500/10 shadow-red-500/[0.02]" : "bg-white border-red-100 shadow-xl"
     }`}>
       {/* MODAL DE CONFIRMACIÓN DE CAÍDA */}
@@ -3098,19 +4234,31 @@ function DemonAltar({ theme }: { theme: string }) {
                     </button>
                   </motion.div>
                 ) : d.checked ? (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border-2 border-emerald-500/30 text-emerald-300 shadow-xl shadow-emerald-500/10"
-                  >
-                    <motion.div
-                      animate={{ scale: [1, 1.15, 1] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  <div className="w-full flex flex-col gap-3">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border-2 border-emerald-500/30 text-emerald-300 shadow-xl shadow-emerald-500/10"
                     >
-                      <Lock className="w-5 h-5 text-emerald-400" />
+                      <motion.div
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                      >
+                        <Lock className="w-5 h-5 text-emerald-400" />
+                      </motion.div>
+                      <span className="text-xs font-black uppercase tracking-[0.25em] animate-pulse">Sello Asegurado Hoy</span>
                     </motion.div>
-                    <span className="text-xs font-black uppercase tracking-[0.25em] animate-pulse">Sello Asegurado Hoy</span>
-                  </motion.div>
+                    
+                    <button
+                      onClick={() => handleCleanReset(type)}
+                      disabled={actionLoading !== null}
+                      className="w-full py-3 rounded-2xl bg-slate-500/5 border border-slate-500/20 hover:bg-slate-500/10 hover:border-slate-500/40 text-slate-400 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+                      title="Forzar el altar a 0 de forma limpia"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Reiniciar Racha (Forzar 0)</span>
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <motion.button
@@ -3147,9 +4295,17 @@ function DemonAltar({ theme }: { theme: string }) {
                       onClick={() => handleReset(type)}
                       disabled={actionLoading !== null}
                       className="py-4 px-5 rounded-2xl bg-rose-500/5 border border-rose-500/20 hover:bg-rose-500/10 text-rose-400 font-black uppercase text-xs tracking-widest hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center justify-center cursor-pointer"
-                      title="Caí en tentación / Reiniciar racha"
+                      title="Caí en tentación / Registrar tropiezo"
                     >
                       Caí
+                    </button>
+                    <button
+                      onClick={() => handleCleanReset(type)}
+                      disabled={actionLoading !== null}
+                      className="py-4 px-4 rounded-2xl bg-slate-500/5 border border-slate-500/20 hover:bg-slate-500/10 hover:border-slate-500/40 text-slate-400 font-black uppercase text-xs tracking-widest hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center justify-center cursor-pointer"
+                      title="Reiniciar a 0 de forma limpia"
+                    >
+                      <Trash2 className="w-4 h-4 text-slate-400" />
                     </button>
                   </>
                 )}
@@ -3284,7 +4440,7 @@ function FinancialShield({ theme }: { theme: string }) {
 
   if (loading) {
     return (
-      <div className={`p-10 rounded-[3rem] border-2 h-44 flex items-center justify-center ${theme === "dark" ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
+      <div className={`p-5 md:p-8 rounded-3xl border-2 h-44 flex items-center justify-center ${theme === "dark" ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}>
         <Shield className="w-5 h-5 animate-pulse text-emerald-500" />
       </div>
     )
@@ -3292,7 +4448,7 @@ function FinancialShield({ theme }: { theme: string }) {
 
   return (
     isEditing ? (
-      <div className={`p-10 rounded-[3rem] border-2 relative overflow-hidden shadow-2xl ${theme === "dark" ? "bg-[#0A1A12] border-emerald-500/30" : "bg-emerald-50 border-emerald-200"}`}>
+      <div className={`p-5 md:p-8 rounded-3xl border-2 relative overflow-hidden shadow-2xl ${theme === "dark" ? "bg-[#0A1A12] border-emerald-500/30" : "bg-emerald-50 border-emerald-200"}`}>
         <div className="flex items-center justify-between mb-6 text-emerald-500">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 animate-pulse" />
@@ -3345,7 +4501,7 @@ function FinancialShield({ theme }: { theme: string }) {
       <motion.div 
         whileHover={{ y: -5 }} 
         onClick={() => setIsEditing(true)}
-        className={`p-10 rounded-[3rem] border-2 relative overflow-hidden shadow-2xl cursor-pointer group ${theme === "dark" ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}
+        className={`p-5 md:p-8 rounded-3xl border-2 relative overflow-hidden shadow-2xl cursor-pointer group ${theme === "dark" ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50 border-emerald-100"}`}
         title="Haz clic para actualizar tus fondos de supervivencia"
       >
         <div className="absolute top-6 right-6 text-emerald-400 opacity-0 group-hover:opacity-100 transition-all">
@@ -3373,7 +4529,7 @@ export default function OracleWarRoomPage() {
   const router = useRouter()
   const { fetchLifePlan } = useOracleStore()
   const { completeCheckIn } = useAppStore()
-  const [theme, setTheme] = useState<"dark" | "light" | "solarized">("dark")
+  const [theme, setTheme] = useState<"dark" | "light" | "solarized">("solarized")
   const [isChatOpen, setIsChatOpen] = useState(false)
 
   const [devBypassActive, setDevBypassActive] = useState(true)
@@ -3383,8 +4539,18 @@ export default function OracleWarRoomPage() {
     setIsMounted(true)
     if (typeof window !== 'undefined') {
       setDevBypassActive(localStorage.getItem('dev_bypass_checkin') !== 'false')
+      const savedTheme = localStorage.getItem('oracle_theme') as "dark" | "light" | "solarized" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (isMounted && typeof window !== 'undefined') {
+      localStorage.setItem('oracle_theme', theme)
+    }
+  }, [theme, isMounted])
 
   const handleEnterEther = () => {
     completeCheckIn()
@@ -3578,20 +4744,20 @@ export default function OracleWarRoomPage() {
 
       <main className="pb-20 md:pb-32 px-4 md:px-16 max-w-[1900px] mx-auto">
         {/* Spacer para empujar el contenido por debajo de la navbar fija */}
-        <div className="h-36 md:h-52" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-20">
+        <div className="h-28 md:h-40" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12">
           
-          {/* THE CONSOLE (9 cols) */}
-          <div className="lg:col-span-9">
+          {/* THE CONSOLE (8 cols) */}
+          <div className="lg:col-span-8">
             <ProtocolConsole theme={theme} />
           </div>
 
-          {/* SIDEBAR (3 cols) */}
-          <div className="lg:col-span-3 flex flex-col gap-12">
+          {/* SIDEBAR (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col gap-8 md:gap-12">
             <DemonAltar theme={theme} />
             {isEditingQuote ? (
               <div 
-                className={`p-10 rounded-[3.5rem] border-2 relative overflow-hidden shadow-2xl ${theme === "dark" ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}
+                className={`p-5 md:p-8 rounded-3xl border-2 relative overflow-hidden shadow-2xl ${theme === "dark" ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}
               >
                 <div className="flex items-center justify-between mb-6 text-indigo-500">
                   <div className="flex items-center gap-3">
@@ -3631,7 +4797,7 @@ export default function OracleWarRoomPage() {
               <motion.div 
                 whileHover={{ y: -5 }} 
                 onClick={() => setIsEditingQuote(true)}
-                className={`p-10 rounded-[3.5rem] border-2 relative overflow-hidden shadow-2xl cursor-pointer group ${theme === "dark" ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}
+                className={`p-5 md:p-8 rounded-3xl border-2 relative overflow-hidden shadow-2xl cursor-pointer group ${theme === "dark" ? "bg-indigo-500/10 border-indigo-500/20" : "bg-indigo-50 border-indigo-200"}`}
                 title="Haz clic para personalizar tu frase diaria"
               >
                 <div className="flex items-center justify-between mb-6 text-indigo-500">
@@ -3653,13 +4819,13 @@ export default function OracleWarRoomPage() {
             <FinancialShield theme={theme} />
             <SkillTree theme={theme} />
 
-            <div className="p-10 rounded-[3.5rem] bg-white/5 border border-white/10 text-center backdrop-blur-sm">
-              <div className="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-cyan-400 to-indigo-600 mx-auto mb-8 flex items-center justify-center text-white shadow-[0_0_50px_rgba(34,211,238,0.3)]">
-                <User className="w-12 h-12" />
+            <div className="p-5 md:p-8 rounded-3xl bg-white/5 border border-white/10 text-center backdrop-blur-sm">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-600 mx-auto mb-6 flex items-center justify-center text-white shadow-[0_0_50px_rgba(34,211,238,0.3)]">
+                <User className="w-10 h-10" />
               </div>
-              <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-2">Marty</h3>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-10 italic opacity-60">Architect of Johto Legacy</p>
-              <button onClick={() => router.push("/onboarding?edit=true")} className="w-full py-6 rounded-[3rem] bg-white text-slate-900 font-[1000] uppercase text-xs tracking-widest hover:bg-cyan-400 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+              <h3 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter mb-2">Marty</h3>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-6 italic opacity-60">Architect of Johto Legacy</p>
+              <button onClick={() => router.push("/onboarding?edit=true")} className="w-full py-4 rounded-2xl bg-white text-slate-900 font-[1000] uppercase text-xs tracking-widest hover:bg-cyan-400 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
                 ACCEDER AL NÚCLEO
               </button>
             </div>
@@ -3683,8 +4849,6 @@ export default function OracleWarRoomPage() {
           </div>
         </div>
       </main>
-
-
 
       <OracleDrawer 
         tipo="mentor" 

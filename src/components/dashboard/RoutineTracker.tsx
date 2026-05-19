@@ -8,6 +8,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/shared/lib/supabase/client';
 
+const getLocalDateString = (d: Date = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface Block {
   id: string;
   activity_name: string;
@@ -37,7 +44,7 @@ export default function RoutineTracker() {
       const dayIndex = today.getDay(); // 0-6
       setIsWeekend(dayIndex === 0 || dayIndex === 6);
       
-      const dateStr = today.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(today);
 
       // 1. Cargar bloques de hoy
       const { data: blocksData } = await supabase
@@ -81,7 +88,7 @@ export default function RoutineTracker() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getLocalDateString();
 
     if (isDone) {
       await supabase.from('schedule_checkins').upsert({
