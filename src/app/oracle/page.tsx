@@ -240,6 +240,15 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
   const [challengeVideoUrl, setChallengeVideoUrl] = useState("")
   const [challengeNotes, setChallengeNotes] = useState("")
 
+  // Estados para el Nexo Temporal de Disciplina e Historial del Oráculo
+  const [completedChallenges, setCompletedChallenges] = useState<any[]>([])
+  const [weeklyScores, setWeeklyScores] = useState<any[]>([])
+  const [weeklyCheckins, setWeeklyCheckins] = useState<any[]>([])
+  const [allWeeklyBlocks, setAllWeeklyBlocks] = useState<any[]>([])
+  const [selectedPastDay, setSelectedPastDay] = useState<any>(null)
+  const [expandedBlockIds, setExpandedBlockIds] = useState<Record<string, boolean>>({})
+
+
   // Estados para ver el detalle de los retos de la forja
   const [masterChallenges, setMasterChallenges] = useState<any[]>([])
   const [selectedDetailChallenge, setSelectedDetailChallenge] = useState<any>(null)
@@ -306,6 +315,160 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       console.error("Error fetching active challenge:", err)
     }
   }
+
+  const fetchCompletedChallenges = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('oracle_challenges')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .order('completed_at', { ascending: false })
+
+      if (data) {
+        setCompletedChallenges(data)
+      }
+    } catch (err) {
+      console.error("Error fetching completed challenges:", err)
+    }
+  }
+
+  const getWeeklyDates = () => {
+    const dates = []
+    const today = new Date()
+    const currentDay = today.getDay() // 0 = Dom, 1 = Lun, etc.
+    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay
+    
+    const monday = new Date(today)
+    monday.setDate(today.getDate() + distanceToMonday)
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() + i)
+      dates.push(d)
+    }
+    return dates
+  }
+
+  const fetchWeeklyHistory = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const weeklyDates = getWeeklyDates()
+      const mondayStr = getLocalDateString(weeklyDates[0])
+      const sundayStr = getLocalDateString(weeklyDates[6])
+
+      const { data: scoresData, error: scoresError } = await supabase
+        .from('daily_scores')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', mondayStr)
+        .lte('date', sundayStr)
+
+      if (scoresError) throw scoresError
+
+      const { data: checkinsData, error: checkinsError } = await supabase
+        .from('schedule_checkins')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', mondayStr)
+        .lte('date', sundayStr)
+
+      if (checkinsError) throw checkinsError
+
+      const { data: blocksData, error: blocksError } = await supabase
+        .from('schedule_blocks')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (blocksError) throw blocksError
+
+      if (scoresData) setWeeklyScores(scoresData)
+      if (checkinsData) setWeeklyCheckins(checkinsData)
+      if (blocksData) setAllWeeklyBlocks(blocksData)
+    } catch (err) {
+      console.error("Error fetching weekly history:", err)
+    }
+  }
+
+  const handleSurrenderChallenge = async () => {
+    if (!activeChallenge) return
+    if (!confirm("¿Estás seguro de que deseas abandonar este reto? Se perderá el avance actual.")) return
+    setActionLoading("surrender-challenge")
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error: deleteError } = await supabase
+        .from('oracle_challenges')
+        .delete()
+        .eq('id', activeChallenge.id)
+
+      if (deleteError) throw deleteError
+
+      const cycle = profileGameVars?.oracle_custom_cycle
+      if (cycle && cycle.challenges) {
+        const updatedChallenges = cycle.challenges.map((c: any) =>
+          c.id === activeChallenge.idea_index ? { ...c, used: false } : c
+        )
+        const updatedCycle = {
+          ...cycle,
+          challenges: updatedChallenges
+        }
+        const updatedVars = {
+          ...profileGameVars,
+          oracle_custom_cycle: updatedCycle
+        }
+
+        const { error: profError } = await supabase
+          .from('profiles')
+          .update({ game_vars: updatedVars })
+          .eq('id', user.id)
+
+        if (profError) throw profError
+        setProfileGameVars(updatedVars)
+      }
+
+      setActiveChallenge(null)
+      setChallengeGithubUrl("")
+      setChallengeVideoUrl("")
+      setChallengeNotes("")
+      await fetchCompletedChallenges()
+    } catch (err) {
+      console.error("Error surrendering challenge:", err)
+      alert("Error al rendirse y cancelar el desafío.")
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDayClick = (dayDate: Date, scoreRow: any, dayBlocks: any[], dayCheckins: any[]) => {
+    const dateStr = getLocalDateString(dayDate);
+    const totalBlocks = dayBlocks.length;
+    const completedBlocks = dayCheckins.length;
+    const calculatedCompletion = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0;
+    
+    setSelectedPastDay({
+      date: dateStr,
+      name: dayDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
+      scoreRow,
+      dayBlocks,
+      dayCheckins,
+      calculatedCompletion
+    });
+  }
+
+  const toggleBlockExpanded = (blockId: string) => {
+    setExpandedBlockIds(prev => ({
+      ...prev,
+      [blockId]: !prev[blockId]
+    }))
+  }
+
 
   const handlePreloadTemplates = () => {
     const preloaded = N8N_CHALLENGES_POOL.map(c => ({
@@ -1015,6 +1178,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
       })
       setEmotionalNote("")
       setShowEmotionalInput(false)
+      await fetchWeeklyHistory()
     } catch (err) {
       console.error('Error al sellar el día:', err)
     } finally {
@@ -1113,6 +1277,8 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
 
       // Cargar reto multimedia activo
       await fetchActiveChallenge()
+      await fetchCompletedChallenges()
+      await fetchWeeklyHistory()
     } catch (err) {
       console.error("Error loading Oracle data:", err)
     } finally {
@@ -1208,6 +1374,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           setCheckins(prev => prev.filter(c => c.block_id !== block.id))
         }
       }
+      await fetchWeeklyHistory()
     } catch (err) {
       console.error("Error syncing block completion:", err)
     }
@@ -1244,6 +1411,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           setCheckins(prev => prev.filter(c => c.block_id !== blockId))
         }
       }
+      await fetchWeeklyHistory()
     } catch (err) {
       console.error("Error toggling block checkin:", err)
     } finally {
@@ -1493,14 +1661,28 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
               <Shield className="w-3.5 h-3.5" />
               <span>{showChallenges ? "🏆 Ocultar Desafíos" : "🏆 Activar Desafíos"}</span>
             </button>
-            <div className={`px-5 py-2.5 rounded-xl border text-xs font-black uppercase tracking-[0.2em] backdrop-blur-md ${
-              appTheme === 'dark'
-                ? 'bg-white/5 border-white/5 text-slate-300'
-                : appTheme === 'solarized'
-                ? 'bg-orange-100/50 border-orange-200/50 text-orange-950 shadow-sm'
-                : 'bg-slate-50 border-slate-200/60 text-slate-700 shadow-sm'
-            }`}>
-              {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            {/* Double-Pill Clock and Date */}
+            <div className="flex items-center gap-2">
+              <div className={`px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5 ${
+                appTheme === 'dark'
+                  ? 'bg-white/5 border-white/5 text-cyan-400'
+                  : appTheme === 'solarized'
+                  ? 'bg-orange-100/50 border-orange-200/50 text-orange-850 shadow-sm'
+                  : 'bg-slate-50 border-slate-200/60 text-cyan-700 shadow-sm'
+              }`}>
+                <Calendar className="w-3.5 h-3.5 text-current opacity-80" />
+                <span>{currentTime.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+              </div>
+              <div className={`px-4 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-widest backdrop-blur-md flex items-center gap-1.5 ${
+                appTheme === 'dark'
+                  ? 'bg-white/5 border-white/5 text-slate-300'
+                  : appTheme === 'solarized'
+                  ? 'bg-orange-100/50 border-orange-200/50 text-orange-950 shadow-sm'
+                  : 'bg-slate-50 border-slate-200/60 text-slate-700 shadow-sm'
+              }`}>
+                <Clock className="w-3.5 h-3.5 text-current opacity-80 animate-pulse" />
+                <span>{currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2260,18 +2442,15 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 {/* Controles de Entrega */}
                 <div className={`flex items-center justify-between gap-4 pt-4 border-t ${appTheme === 'dark' ? 'border-white/5' : 'border-slate-200'}`}>
                   <button
-                    onClick={() => {
-                      if (confirm("¿Estás seguro de que deseas abandonar este reto? Se perderá el avance actual.")) {
-                        setActiveChallenge(null)
-                      }
-                    }}
+                    onClick={handleSurrenderChallenge}
+                    disabled={actionLoading !== null}
                     className={`px-5 py-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${
                       appTheme === 'dark'
                         ? 'border-rose-500/20 text-rose-400 hover:bg-rose-500/10'
                         : 'border-rose-300 text-rose-700 hover:bg-rose-100'
                     }`}
                   >
-                    Rendirse y Cancelar
+                    {actionLoading === "surrender-challenge" ? "Cancelando..." : "Rendirse y Cancelar"}
                   </button>
 
                   <div className="flex gap-3">
@@ -2299,6 +2478,100 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       <span>Concluir y Entregar Desafío</span>
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Historial de Desafíos Completados */}
+            {completedChallenges.length > 0 && (
+              <div className={`mt-8 pt-8 border-t ${appTheme === 'dark' ? 'border-white/5' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-3 mb-6">
+                  <History className="w-5 h-5 text-cyan-400" />
+                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-100 font-serif-temple">
+                    Historial de Flujos Forjados ({completedChallenges.length})
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {completedChallenges.map((ch) => (
+                    <div
+                      key={ch.id}
+                      className={`p-5 rounded-2xl border transition-all duration-300 flex flex-col gap-4 backdrop-blur-xl ${
+                        appTheme === 'dark'
+                          ? 'bg-white/[0.01] border-white/5 hover:border-cyan-500/20 hover:bg-white/[0.02]'
+                          : appTheme === 'solarized'
+                          ? 'bg-orange-50/50 border-orange-200 text-orange-950 hover:bg-orange-100/50'
+                          : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
+                            appTheme === 'dark' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-700'
+                          }`}>
+                            Reto #{ch.idea_index}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-500">
+                            {new Date(ch.completed_at || ch.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black text-emerald-400 flex items-center gap-1">
+                          🏆 Completado
+                        </span>
+                      </div>
+
+                      <div>
+                        <h5 className="text-sm font-black uppercase tracking-wide leading-tight">
+                          {ch.title}
+                        </h5>
+                        <p className="text-[10px] font-semibold text-slate-400 mt-1.5 leading-relaxed line-clamp-2">
+                          {ch.description}
+                        </p>
+                      </div>
+
+                      {ch.notes && (
+                        <div className={`p-3 rounded-xl border text-[10px] leading-relaxed font-semibold italic ${
+                          appTheme === 'dark' ? 'bg-black/30 border-white/5 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-700'
+                        }`}>
+                          <span className="text-[8px] font-black uppercase text-amber-500 block not-italic mb-1">
+                            Notas de Aprendizaje:
+                          </span>
+                          "{ch.notes}"
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-auto pt-2">
+                        {ch.github_url && (
+                          <a
+                            href={ch.github_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-lg border text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all hover:scale-102 ${
+                              appTheme === 'dark' ? 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                            </svg>
+                            <span>GitHub</span>
+                          </a>
+                        )}
+                        {ch.video_url && (
+                          <a
+                            href={ch.video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-lg border text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all hover:scale-102 ${
+                              appTheme === 'dark' ? 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            <Play className="w-3 h-3 text-cyan-400 fill-current" />
+                            <span>Demo</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -2442,6 +2715,256 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ================= CHRONO-DISCIPLINE MATRIX & TODAY'S DATE BANNER ================= */}
+      <div className="mx-6 flex flex-col gap-6">
+        
+        {/* Crystal Date Banner & today description */}
+        <div className="p-6 rounded-[2.5rem] bg-white/[0.01] border border-white/5 backdrop-blur-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="absolute top-0 right-0 w-60 h-60 rounded-full blur-[100px] opacity-5 pointer-events-none bg-cyan-500" />
+          
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <Calendar className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 leading-none block">Senda del Guerrero</span>
+              <h3 className="text-lg md:text-xl font-black uppercase tracking-wider text-slate-200 mt-1 font-serif-temple italic">
+                Hoy es {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 rounded-full px-4 py-2 text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>Nexo Temporal Activo</span>
+          </div>
+        </div>
+
+        {/* Chrono-Discipline Matrix strip */}
+        <div className="grid grid-cols-7 gap-2 md:gap-3">
+          {getWeeklyDates().map((dayDate) => {
+            const dateStr = getLocalDateString(dayDate);
+            const todayStr = getLocalDateString();
+            const isToday = dateStr === todayStr;
+            const isFuture = dateStr > todayStr;
+            const dayOfWeek = dayDate.getDay(); // 0 = Dom, 1 = Lun, etc.
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+            const scoreRow = weeklyScores.find(s => s.date === dateStr);
+            const dayBlocks = allWeeklyBlocks.filter(b => b.day_of_week === dayOfWeek);
+            const dayCheckins = weeklyCheckins.filter(c => c.date === dateStr);
+            
+            const totalBlocks = dayBlocks.length;
+            const completedBlocks = dayCheckins.length;
+            const pct = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0;
+
+            // Determines Tier Glows
+            let cardClasses = "";
+            let dotColor = "";
+            if (scoreRow) {
+              if (scoreRow.tier === 2) {
+                // Tier 2 - Guerrero
+                cardClasses = "border-cyan-500/40 bg-cyan-500/[0.03] text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.05)] hover:border-cyan-400";
+                dotColor = "text-cyan-400";
+              } else if (scoreRow.tier === 1) {
+                // Tier 1 - Aceptable
+                cardClasses = "border-amber-500/30 bg-amber-500/[0.02] text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.03)] hover:border-amber-400";
+                dotColor = "text-amber-400";
+              } else {
+                // Tier 0 - Roto
+                cardClasses = "border-rose-500/30 bg-rose-500/[0.02] text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.03)] hover:border-rose-400";
+                dotColor = "text-rose-400";
+              }
+            } else if (isWeekend && !isFuture) {
+              // Zen Emerald
+              cardClasses = "border-emerald-500/20 bg-emerald-500/[0.01] text-emerald-400 hover:border-emerald-400";
+              dotColor = "text-emerald-400";
+            } else if (isToday) {
+              // Today, not evaluated yet
+              cardClasses = "border-slate-400/30 bg-white/[0.02] text-slate-200 hover:border-slate-300";
+              dotColor = "text-slate-400";
+            } else if (isFuture) {
+              // Future day
+              cardClasses = "border-slate-500/5 text-slate-650 bg-white/[0.002] cursor-not-allowed opacity-50";
+              dotColor = "text-slate-700";
+            } else {
+              // Past day, not sealed
+              cardClasses = "border-slate-500/10 text-slate-500 bg-white/[0.01] hover:border-slate-400";
+              dotColor = "text-slate-600";
+            }
+
+            return (
+              <button
+                key={dateStr}
+                disabled={isFuture}
+                onClick={() => handleDayClick(dayDate, scoreRow, dayBlocks, dayCheckins)}
+                className={`flex flex-col items-center justify-between p-3 rounded-2xl border transition-all duration-300 ${
+                  !isFuture ? "hover:scale-[1.04] active:scale-95 cursor-pointer" : ""
+                } ${cardClasses} ${selectedPastDay?.date === dateStr ? "ring-2 ring-current" : ""}`}
+              >
+                {/* Day name (LUN, MAR...) */}
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none">
+                  {dayDate.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3)}
+                </span>
+                
+                {/* Day number */}
+                <span className="text-sm md:text-xl font-[1000] tracking-tighter my-1">
+                  {dayDate.getDate()}
+                </span>
+
+                {/* Micro circular progress ring matching the HSL glow */}
+                <div className={`mt-1 flex items-center justify-center ${dotColor}`}>
+                  <svg className="w-5 h-5" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-800/40"
+                      strokeWidth="4"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="transition-all duration-500"
+                      strokeDasharray={`${pct}, 100`}
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Ecos del Pasado Drawer */}
+        <AnimatePresence>
+          {selectedPastDay && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              className="overflow-hidden"
+            >
+              <div className="p-6 rounded-[2.5rem] bg-[#030712]/90 border border-white/10 backdrop-blur-xl relative space-y-6">
+                <div className="absolute top-0 right-0 w-60 h-60 rounded-full blur-[100px] opacity-10 bg-indigo-500 pointer-events-none" />
+                
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <History className="w-5 h-5 text-indigo-400 animate-spin-slow" />
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Chronal Retrieve Interface</span>
+                      <h4 className="text-base font-black uppercase text-slate-200 mt-0.5 font-serif-temple italic tracking-wider">
+                        ECO DEL PASADO — {selectedPastDay.name}
+                      </h4>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPastDay(null)}
+                    className="p-1.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Body Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                  
+                  {/* Col 1: Reflexión del Guerrero */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">
+                      Reflexión del Guerrero
+                    </span>
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 italic text-slate-350 text-xs md:text-sm leading-relaxed min-h-[120px] flex flex-col justify-between">
+                      <p className="opacity-90">
+                        "{selectedPastDay.scoreRow?.emotional_note || "Sin bitácora emocional para esta fecha."}"
+                      </p>
+                      {selectedPastDay.scoreRow && (
+                        <div className="flex items-center gap-2 mt-4">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            Puntaje: {selectedPastDay.scoreRow.score}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            selectedPastDay.scoreRow.tier === 2 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                            selectedPastDay.scoreRow.tier === 1 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                            'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            Tier: {selectedPastDay.scoreRow.tier === 2 ? 'Guerrero' : selectedPastDay.scoreRow.tier === 1 ? 'Aceptable' : 'Roto'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Col 2: Registro de Recompensas */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">
+                      Registro de Recompensas
+                    </span>
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 text-slate-350 text-xs flex flex-col gap-3 justify-center min-h-[120px]">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span className="font-semibold uppercase text-slate-400">PKD Ganados</span>
+                        <span className="font-black text-cyan-400 uppercase tracking-widest text-sm">
+                          {selectedPastDay.scoreRow?.pkd_earned ?? 0} PKD
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span className="font-semibold uppercase text-slate-400">Estado del Demonio</span>
+                        <span className={`font-black uppercase tracking-widest ${selectedPastDay.scoreRow?.demon_roto ? "text-rose-450" : "text-emerald-450"}`}>
+                          {selectedPastDay.scoreRow?.demon_roto ? "Quiebre/Roto 🔴" : "Templanza Mantenida 🛡️"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold uppercase text-slate-400">Eficiencia Total</span>
+                        <span className="font-black text-slate-200">
+                          {selectedPastDay.calculatedCompletion}% Completado
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Col 3: Desglose de Rutinas (Immutable) */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">
+                      Desglose de Rutinas
+                    </span>
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-3 max-h-40 overflow-y-auto space-y-2">
+                      {selectedPastDay.dayBlocks.length > 0 ? (
+                        selectedPastDay.dayBlocks.map((block: any) => {
+                          const isChecked = selectedPastDay.dayCheckins.some((c: any) => c.block_id === block.id);
+                          const Icon = getIconByActivity(block.activity_name, block.category);
+                          return (
+                            <div key={block.id} className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
+                              <div className="flex items-center gap-2 truncate">
+                                <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                <span className="truncate uppercase font-semibold text-slate-350">{block.activity_name}</span>
+                              </div>
+                              {isChecked ? (
+                                <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">COM</span>
+                              ) : (
+                                <span className="text-[9px] font-black text-slate-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">PEN</span>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center py-6 text-xs text-slate-500 uppercase tracking-widest font-black">
+                          Sin rutinas registradas
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
 
       <div className="space-y-16 md:space-y-20">
         {Object.entries(
@@ -2796,321 +3319,342 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                               </div>
                             </motion.div>
                           ) : (
-                            <div className="flex flex-col gap-6">
-                            {/* Meta Row: Time & Status */}
-                            <div className="flex flex-wrap items-center justify-between gap-4">
-                              <div className={`flex items-center gap-2.5 px-5 py-2 rounded-full border whitespace-nowrap ${getBadgeClasses(block.category)}`}>
-                                <Clock className="w-4 h-4" />
-                                <span className="text-sm font-black uppercase tracking-wider tabular-nums">
-                                  {displayTime}
-                                </span>
-                              </div>
-
-                              {isActive && (
-                                <span className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase tracking-widest animate-pulse border border-cyan-500/20">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                                  Protocolo Activo
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Title Row */}
-                            <div className="flex items-center gap-4">
-                              <div className={`p-4 rounded-2xl flex-shrink-0 ${
-                                block.category.includes('Mañana') ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400' :
-                                (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500/10 text-cyan-500 dark:text-cyan-400' :
-                                block.category.includes('Tarde') ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' :
-                                'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
-                              }`}>
-                                <Icon className={`w-6 h-6 md:w-8 md:h-8 ${isActive ? "animate-pulse" : ""}`} />
-                              </div>
-                              <h4 className="text-lg md:text-xl lg:text-2xl font-[1000] uppercase italic tracking-tighter leading-tight break-words">
-                                {title}
-                              </h4>
-                            </div>
-
-                            {/* Context/Sadhguru Quote Banner */}
-                            <div className={`p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 border shadow-md relative overflow-hidden ${
-                              appTheme === "dark" ? "bg-black/40 border-white/5" : "bg-white/60 border-black/5 backdrop-blur-sm"
-                            }`}>
-                              <div className={`absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] opacity-10 pointer-events-none ${
-                                block.category.includes('Mañana') ? 'bg-amber-500' :
-                                (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500' :
-                                block.category.includes('Tarde') ? 'bg-emerald-500' :
-                                'bg-indigo-500'
-                              }`} />
-                              
-                              {/* Icono de destello temático y dinámico */}
-                              <div className={`flex-shrink-0 relative z-10 ${
-                                block.category.includes('Mañana') ? 'text-amber-500 dark:text-amber-400' :
-                                (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'text-cyan-500 dark:text-cyan-400' :
-                                block.category.includes('Tarde') ? 'text-emerald-500 dark:text-emerald-400' :
-                                'text-indigo-500 dark:text-indigo-400'
-                              }`}>
-                                <Sparkles className="w-5 h-5 md:w-6 md:h-6 opacity-60 animate-pulse" />
-                              </div>
-
-                              <p className={`flex-1 text-xs md:text-sm lg:text-base font-[900] italic uppercase leading-relaxed tracking-tight relative z-10 ${
-                                appTheme === 'dark' ? 'text-slate-200' : 'text-slate-800'
-                              }`}>
-                                "{block.custom_phrase || getSadhguruPhrase(title, block.category, isActive)}"
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                          {/* --- DIVIDER --- */}
-                          <div className="h-px w-full bg-gradient-to-r from-transparent via-current/10 to-transparent" />
-
-                          {/* --- EXECUTION SECTION --- */}
-                          <div className="flex flex-col gap-6">
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Protocol Execution List</span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => toggleBlockCheckin(block.id, isCompleted)}
-                                  disabled={actionLoading !== null}
-                                  className={`px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] ${
-                                    isCompleted
-                                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
-                                  }`}
-                                  title={isCompleted ? "Desmarcar bloque completado" : "Asegurar/Sellar bloque manualmente"}
-                                >
-                                  {isCompleted ? (
-                                    <>
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                      <span className="font-black text-emerald-400">Bloque Asegurado</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Circle className="w-3.5 h-3.5 opacity-60" />
-                                      <span>Sellar Bloque</span>
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-
-                            {lastNoteForBlock && (
-                              <motion.div 
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className={`p-4 rounded-2xl border flex gap-3 items-start relative overflow-hidden ${
-                                  appTheme === "dark" 
-                                    ? "bg-amber-500/5 border-amber-500/15 text-amber-400/90 shadow-[0_0_20px_rgba(245,158,11,0.02)]" 
-                                    : "bg-amber-50/70 border-amber-200/60 text-amber-800"
-                                }`}
+                            <div className="flex flex-col w-full gap-4">
+                              {/* Header Row */}
+                              <div 
+                                onClick={() => toggleBlockExpanded(block.id)}
+                                className="flex items-center justify-between gap-4 w-full cursor-pointer py-1"
                               >
-                                <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-[40px] opacity-[0.03] bg-amber-500 pointer-events-none" />
-                                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5 animate-pulse" />
-                                <div className="flex-1">
-                                  <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-500 block mb-1">
-                                    Eco del Combate Anterior ({new Date(lastNoteForBlock.completed_at || lastNoteForBlock.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}):
-                                  </span>
-                                  <p className="text-xs font-semibold italic leading-relaxed opacity-95">
-                                    "{lastNoteForBlock.note}"
-                                  </p>
-                                </div>
-                              </motion.div>
-                            )}
+                                {/* Left Section (Details) */}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className={`p-2 rounded-xl flex-shrink-0 ${
+                                    block.category.includes('Mañana') ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400' :
+                                    (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500/10 text-cyan-500 dark:text-cyan-400' :
+                                    block.category.includes('Tarde') ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' :
+                                    'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
+                                  }`}>
+                                    <Icon className={`w-4 h-4 md:w-5 h-5 ${isActive ? "animate-pulse" : ""}`} />
+                                  </div>
+                                  
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h4 className="text-sm md:text-base lg:text-lg font-black uppercase tracking-tight leading-none truncate mt-0.5">
+                                        {title}
+                                      </h4>
+                                      
+                                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-wider tabular-nums leading-none ${getBadgeClasses(block.category)}`}>
+                                        <Clock className="w-2.5 h-2.5" />
+                                        <span>{displayTime}</span>
+                                      </div>
 
-                            {/* Dynamic Tasks Section */}
-                            <div className="space-y-4">
-                              <AnimatePresence>
-                                {blockTasks.map(task => {
-                                  const daysPending = (() => {
-                                    if (!task.original_date) return 0
-                                    try {
-                                      const [y, m, d] = task.original_date.split('-').map(Number)
-                                      const taskDate = new Date(y, m - 1, d)
-                                      const today = new Date()
-                                      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-                                      const diff = todayMidnight.getTime() - taskDate.getTime()
-                                      return Math.max(0, Math.floor(diff / (1000 * 3600 * 24)))
-                                    } catch (e) {
-                                      return 0
-                                    }
-                                  })()
-                                  return (
-                                    <motion.div 
-                                      key={task.id} 
-                                      layout
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      exit={{ opacity: 0, scale: 0.95 }}
-                                      className={`flex flex-col p-5 px-6 rounded-2xl border-2 transition-all group/task items-stretch ${
-                                        task.is_completed ? "bg-emerald-500/10 border-emerald-500/30 opacity-60" : 
-                                        "bg-white/5 border-transparent hover:border-current shadow-lg"
-                                      }`}
-                                    >
-                                      {editingTaskId === task.id ? (
-                                        <div className="flex items-center gap-3 w-full">
-                                          <input
-                                            type="text"
-                                            value={editingTaskText}
-                                            onChange={(e) => setEditingTaskText(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === "Enter") handleSaveEdit(task.id)
-                                              if (e.key === "Escape") setEditingTaskId(null)
-                                            }}
-                                            className="flex-1 bg-white/10 border-2 border-current/20 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest focus:outline-none focus:border-current"
-                                            autoFocus
-                                          />
-                                          <div className="flex items-center gap-1">
-                                            <button 
-                                              onClick={() => handleSaveEdit(task.id)}
-                                              className="p-2 text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
-                                              title="Guardar Cambios"
-                                            >
-                                              <Save className="w-5 h-5" />
-                                            </button>
-                                            <button 
-                                              onClick={() => setEditingTaskId(null)}
-                                              className="p-2 text-rose-400 hover:text-rose-300 transition-all cursor-pointer"
-                                              title="Cancelar Edición"
-                                            >
-                                              <X className="w-5 h-5" />
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <>
-                                          <div className="flex items-center justify-between w-full gap-5">
-                                            <div className="flex items-center gap-5 flex-1 cursor-pointer" onClick={() => toggleTask(task.id, task.is_completed)}>
-                                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                                task.is_completed ? "bg-emerald-500 border-emerald-400 text-white" : "border-current opacity-30"
-                                              }`}>
-                                                {task.is_completed && <CheckCircle2 className="w-4 h-4" />}
-                                              </div>
-                                              <div className="flex flex-col">
-                                                <span className={`text-sm md:text-base font-black uppercase tracking-[0.1em] ${
-                                                  task.is_completed ? "line-through opacity-50 italic" : ""
-                                                }`}>
-                                                  {task.task_text}
-                                                </span>
-                                                {daysPending > 0 && !task.is_completed && (
-                                                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1.5 mt-1.5">
-                                                    <History className="w-3.5 h-3.5" /> Carga de Honor: {daysPending}d
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                            
-                                            {/* Acciones de la tarea */}
-                                            <div className="flex items-center gap-1 opacity-70 md:opacity-0 md:group-hover/task:opacity-100 transition-all duration-300 flex-shrink-0">
-                                              <button 
-                                                onClick={() => {
-                                                  setExpandedNoteTaskId(expandedNoteTaskId === task.id ? null : task.id)
-                                                  if (!editingNotes[task.id]) {
-                                                    setEditingNotes(prev => ({ ...prev, [task.id]: task.note || "" }))
-                                                  }
-                                                }}
-                                                className={`p-2 hover:text-amber-400 text-current transition-all cursor-pointer ${
-                                                  task.note ? "opacity-100 text-amber-400" : "opacity-60 hover:opacity-100"
-                                                }`}
-                                                title="Bitácora de la Tarea"
-                                              >
-                                                <FileText className="w-4 h-4" />
-                                              </button>
-                                              <button 
-                                                onClick={() => {
-                                                  setEditingTaskId(task.id)
-                                                  setEditingTaskText(task.task_text)
-                                                }}
-                                                className="p-2 hover:text-cyan-400 text-current opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                                                title="Editar Tarea"
-                                              >
-                                                <Edit3 className="w-4 h-4" />
-                                              </button>
-                                              <button 
-                                                onClick={() => deleteTask(task.id)}
-                                                className="p-2 hover:text-rose-500 text-current opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                                                title="Eliminar Tarea"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            </div>
-                                          </div>
-
-                                          {/* Nota estática visible */}
-                                          {task.note && expandedNoteTaskId !== task.id && (
-                                            <div className="mt-2.5 p-3 rounded-xl bg-black/20 border border-white/5 flex gap-2 items-start text-xs font-bold text-slate-400">
-                                              <span className="text-[10px] font-black uppercase text-amber-500/80 tracking-wider flex-shrink-0 mt-0.5">NOTA:</span>
-                                              <span className="italic">"{task.note}"</span>
-                                            </div>
-                                          )}
-
-                                          {/* Editor de bitácora expandido */}
-                                          {expandedNoteTaskId === task.id && (
-                                            <div className="mt-3.5 p-4 rounded-2xl bg-black/40 border border-amber-500/20 flex flex-col gap-3 w-full relative overflow-hidden">
-                                              <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-[40px] opacity-[0.03] bg-amber-500 pointer-events-none" />
-                                              <div className="flex items-center justify-between z-10">
-                                                <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                                  <FileText className="w-3.5 h-3.5" /> Bitácora de Combate
-                                                </span>
-                                                <button 
-                                                  onClick={() => setExpandedNoteTaskId(null)}
-                                                  className="text-slate-400 hover:text-slate-200 text-xs font-black uppercase tracking-widest text-[9px]"
-                                                >
-                                                  Cerrar
-                                                </button>
-                                              </div>
-                                              <textarea
-                                                value={editingNotes[task.id] ?? ""}
-                                                onChange={(e) => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                                placeholder="Anota observaciones (ej. dolencia, lo que faltó, recordatorio de mañana)..."
-                                                className="bg-[#030712]/80 text-sm text-slate-100 font-semibold py-3 px-4 rounded-xl border border-white/10 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 focus:outline-none resize-none h-24 w-full z-10 leading-relaxed placeholder:text-slate-500"
-                                                autoFocus
-                                              />
-                                              <div className="flex justify-end gap-2 z-10">
-                                                <button
-                                                  onClick={() => handleSaveNote(task.id, editingNotes[task.id] || "")}
-                                                  className="px-4 py-1.5 bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border border-amber-500/30"
-                                                >
-                                                  Anclar Nota
-                                                </button>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </>
+                                      {isActive && (
+                                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[8px] font-black uppercase tracking-widest animate-pulse border border-cyan-500/20 leading-none">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                                          Activo
+                                        </span>
                                       )}
-                                    </motion.div>
-                                  )
-                                })}
-                              </AnimatePresence>
-                              
-                              {/* Input para nuevas misiones */}
-                              <div className={`flex items-center gap-4 p-3 px-6 rounded-2xl border-2 border-dashed transition-all ${
-                                activeInputBlock === block.id ? "border-current opacity-100" : "border-current/20 opacity-30 hover:opacity-100"
-                              }`}>
-                                <input 
-                                  type="text" 
-                                  value={activeInputBlock === block.id ? newTaskText : ""} 
-                                  onChange={(e) => {
-                                    setActiveInputBlock(block.id)
-                                    setNewTaskText(e.target.value)
-                                  }}
-                                  onKeyDown={(e) => e.key === "Enter" && handleAddTask(block.activity_name)}
-                                  placeholder="REFORZAR PROTOCOLO..." 
-                                  className="flex-1 bg-transparent px-2 py-2 text-sm font-black uppercase tracking-widest focus:outline-none placeholder:text-current opacity-70"
-                                />
-                                <button 
-                                  onClick={() => handleAddTask(block.activity_name)} 
-                                  className={`p-3 rounded-xl transition-all flex-shrink-0 ${
-                                    block.category.includes('Mañana') ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/30' :
-                                    (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-500/30' :
-                                    block.category.includes('Tarde') ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white border border-orange-500/30' :
-                                    'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white border border-indigo-500/30'
-                                  } flex items-center justify-center`}
-                                >
-                                  <Plus className="w-5 h-5" />
-                                </button>
+                                    </div>
+
+                                    {/* Subtitle / Sadhguru Quote inline */}
+                                    <p className="line-clamp-1 mt-0.5 text-[10px] opacity-75 italic tracking-tight uppercase">
+                                      "{block.custom_phrase || getSadhguruPhrase(title, block.category, isActive)}"
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Right Section (Controls) */}
+                                <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                  {/* Completed subtasks count badge */}
+                                  {blockTasks.length > 0 && (
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
+                                      isCompletedByTasks 
+                                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                                        : "bg-white/5 text-slate-400 border border-white/5"
+                                    }`}>
+                                      ✔ {blockTasks.filter(t => t.is_completed).length}/{blockTasks.length} SUB-PROTOCOLOS
+                                    </span>
+                                  )}
+
+                                  {/* Manual completion circle button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleBlockCheckin(block.id, isCompleted);
+                                    }}
+                                    disabled={actionLoading !== null}
+                                    className={`p-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 ${
+                                      isCompleted
+                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                        : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                                    }`}
+                                    title={isCompleted ? "Desmarcar bloque" : "Sellar bloque"}
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    ) : (
+                                      <Circle className="w-3.5 h-3.5 opacity-60" />
+                                    )}
+                                  </button>
+
+                                  {/* ChevronDown */}
+                                  <ChevronDown 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleBlockExpanded(block.id);
+                                    }}
+                                    className={`w-4 h-4 text-slate-400 hover:text-white cursor-pointer transition-transform duration-300 ${
+                                      expandedBlockIds[block.id] ? "transform rotate-180" : ""
+                                    }`} 
+                                  />
+                                </div>
                               </div>
-                            </div>
+
+                              {/* Accordion Body */}
+                              <AnimatePresence initial={false}>
+                                {expandedBlockIds[block.id] && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                    animate={{ height: "auto", opacity: 1, marginTop: 12 }}
+                                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                                    className="overflow-hidden w-full flex flex-col gap-4"
+                                  >
+                                    {/* --- DIVIDER --- */}
+                                    <div className="h-px w-full bg-gradient-to-r from-transparent via-current/10 to-transparent" />
+
+                                    {/* Sadhguru Full Quote Banner in body */}
+                                    <div className={`p-4 rounded-2xl flex items-center gap-4 border shadow-sm relative overflow-hidden ${
+                                      appTheme === "dark" ? "bg-black/40 border-white/5" : "bg-white/60 border-black/5 backdrop-blur-sm"
+                                    }`}>
+                                      <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] opacity-5 pointer-events-none bg-current" />
+                                      <div className="flex-shrink-0 text-current opacity-60">
+                                        <Sparkles className="w-5 h-5 opacity-60 animate-pulse" />
+                                      </div>
+                                      <p className={`flex-1 text-xs md:text-sm font-[900] italic uppercase leading-relaxed tracking-tight ${
+                                        appTheme === 'dark' ? 'text-slate-200' : 'text-slate-800'
+                                      }`}>
+                                        "{block.custom_phrase || getSadhguruPhrase(title, block.category, isActive)}"
+                                      </p>
+                                    </div>
+
+                                    {/* Combat Echo / Last Note */}
+                                    {lastNoteForBlock && (
+                                      <div className={`p-4 rounded-2xl border flex gap-3 items-start relative overflow-hidden ${
+                                        appTheme === "dark" 
+                                          ? "bg-amber-500/5 border-amber-500/15 text-amber-400/90 shadow-[0_0_20px_rgba(245,158,11,0.02)]" 
+                                          : "bg-amber-50/70 border-amber-200/60 text-amber-800"
+                                      }`}>
+                                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-[40px] opacity-[0.03] bg-amber-500 pointer-events-none" />
+                                        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5 animate-pulse" />
+                                        <div className="flex-1">
+                                          <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-500 block mb-1">
+                                            Eco del Combate Anterior ({new Date(lastNoteForBlock.completed_at || lastNoteForBlock.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}):
+                                          </span>
+                                          <p className="text-xs font-semibold italic leading-relaxed opacity-95">
+                                            "{lastNoteForBlock.note}"
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Subtasks Execution list */}
+                                    <div className="flex flex-col gap-3">
+                                      <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Lista de Sub-Protocolos</span>
+                                      
+                                      <div className="space-y-3">
+                                        {blockTasks.map(task => {
+                                          const daysPending = (() => {
+                                            if (!task.original_date) return 0
+                                            try {
+                                              const [y, m, d] = task.original_date.split('-').map(Number)
+                                              const taskDate = new Date(y, m - 1, d)
+                                              const today = new Date()
+                                              const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                                              const diff = todayMidnight.getTime() - taskDate.getTime()
+                                              return Math.max(0, Math.floor(diff / (1000 * 3600 * 24)))
+                                            } catch (e) {
+                                              return 0
+                                            }
+                                          })()
+
+                                          return (
+                                            <div 
+                                              key={task.id} 
+                                              className={`flex flex-col p-4 px-5 rounded-xl border transition-all group/task items-stretch ${
+                                                task.is_completed ? "bg-emerald-500/10 border-emerald-500/20 opacity-60" : 
+                                                "bg-white/5 border-transparent hover:border-current/20 shadow-md"
+                                              }`}
+                                            >
+                                              {editingTaskId === task.id ? (
+                                                <div className="flex items-center gap-3 w-full">
+                                                  <input
+                                                    type="text"
+                                                    value={editingTaskText}
+                                                    onChange={(e) => setEditingTaskText(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === "Enter") handleSaveEdit(task.id)
+                                                      if (e.key === "Escape") setEditingTaskId(null)
+                                                    }}
+                                                    className="flex-1 bg-white/10 border-2 border-current/20 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest focus:outline-none focus:border-current"
+                                                    autoFocus
+                                                  />
+                                                  <div className="flex items-center gap-1">
+                                                    <button 
+                                                      onClick={() => handleSaveEdit(task.id)}
+                                                      className="p-2 text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
+                                                      title="Guardar Cambios"
+                                                    >
+                                                      <Save className="w-5 h-5" />
+                                                    </button>
+                                                    <button 
+                                                      onClick={() => setEditingTaskId(null)}
+                                                      className="p-2 text-rose-400 hover:text-rose-300 transition-all cursor-pointer"
+                                                      title="Cancelar Edición"
+                                                    >
+                                                      <X className="w-5 h-5" />
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  <div className="flex items-center justify-between w-full gap-4">
+                                                    <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleTask(task.id, task.is_completed)}>
+                                                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                                                        task.is_completed ? "bg-emerald-500 border-emerald-400 text-white" : "border-current opacity-30"
+                                                      }`}>
+                                                        {task.is_completed && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                                                      </div>
+                                                      <div className="flex flex-col">
+                                                        <span className={`text-xs md:text-sm font-black uppercase tracking-[0.1em] ${
+                                                          task.is_completed ? "line-through opacity-50 italic" : ""
+                                                        }`}>
+                                                          {task.task_text}
+                                                        </span>
+                                                        {daysPending > 0 && !task.is_completed && (
+                                                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1 mt-1">
+                                                            <History className="w-3 h-3" /> Carga de Honor: {daysPending}d
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                    
+                                                    {/* Actions */}
+                                                    <div className="flex items-center gap-1 opacity-75 md:opacity-0 md:group-hover/task:opacity-100 transition-all duration-300 flex-shrink-0">
+                                                      <button 
+                                                        onClick={() => {
+                                                          setExpandedNoteTaskId(expandedNoteTaskId === task.id ? null : task.id)
+                                                          if (!editingNotes[task.id]) {
+                                                            setEditingNotes(prev => ({ ...prev, [task.id]: task.note || "" }))
+                                                          }
+                                                        }}
+                                                        className={`p-1.5 hover:text-amber-400 text-current transition-all cursor-pointer ${
+                                                          task.note ? "opacity-100 text-amber-400" : "opacity-60 hover:opacity-100"
+                                                        }`}
+                                                        title="Bitácora de la Tarea"
+                                                      >
+                                                        <FileText className="w-4 h-4" />
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => {
+                                                          setEditingTaskId(task.id)
+                                                          setEditingTaskText(task.task_text)
+                                                        }}
+                                                        className="p-1.5 hover:text-cyan-400 text-current opacity-60 hover:opacity-100 transition-all cursor-pointer"
+                                                        title="Editar Tarea"
+                                                      >
+                                                        <Edit3 className="w-4 h-4" />
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => deleteTask(task.id)}
+                                                        className="p-1.5 hover:text-rose-500 text-current opacity-60 hover:opacity-100 transition-all cursor-pointer"
+                                                        title="Eliminar Tarea"
+                                                      >
+                                                        <Trash2 className="w-4 h-4" />
+                                                      </button>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Static note if set */}
+                                                  {task.note && expandedNoteTaskId !== task.id && (
+                                                    <div className="mt-2 p-2.5 rounded-lg bg-black/10 border border-white/5 flex gap-2 items-start text-xs font-bold text-slate-400">
+                                                      <span className="text-[9px] font-black uppercase text-amber-500/80 tracking-wider flex-shrink-0 mt-0.5">NOTA:</span>
+                                                      <span className="italic">"{task.note}"</span>
+                                                    </div>
+                                                  )}
+
+                                                  {/* Note editor */}
+                                                  {expandedNoteTaskId === task.id && (
+                                                    <div className="mt-3 p-3.5 rounded-xl bg-black/40 border border-amber-500/20 flex flex-col gap-2.5 w-full relative overflow-hidden">
+                                                      <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-[30px] opacity-[0.03] bg-amber-500 pointer-events-none" />
+                                                      <div className="flex items-center justify-between z-10">
+                                                        <span className="text-[8px] font-black text-amber-400 uppercase tracking-[0.2em] flex items-center gap-1">
+                                                          <FileText className="w-3 h-3" /> Bitácora de Combate
+                                                        </span>
+                                                        <button 
+                                                          onClick={() => setExpandedNoteTaskId(null)}
+                                                          className="text-slate-400 hover:text-slate-200 text-[8px] font-black uppercase tracking-widest"
+                                                        >
+                                                          Cerrar
+                                                        </button>
+                                                      </div>
+                                                      <textarea
+                                                        value={editingNotes[task.id] ?? ""}
+                                                        onChange={(e) => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                        placeholder="Anota observaciones (ej. dolencia, lo que faltó, recordatorio de mañana)..."
+                                                        className="bg-[#030712]/80 text-xs text-slate-100 font-semibold py-2 px-3 rounded-lg border border-white/10 focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 focus:outline-none resize-none h-16 w-full z-10 leading-relaxed placeholder:text-slate-500"
+                                                        autoFocus
+                                                      />
+                                                      <div className="flex justify-end gap-2 z-10">
+                                                        <button
+                                                          onClick={() => handleSaveNote(task.id, editingNotes[task.id] || "")}
+                                                          className="px-3 py-1 bg-amber-50/10 text-amber-400 hover:bg-amber-500 hover:text-white rounded-md text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer border border-amber-500/30"
+                                                        >
+                                                          Anclar Nota
+                                                        </button>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+
+                                      {/* Input for new subtask */}
+                                      <div className={`flex items-center gap-3 p-2 px-4 rounded-xl border border-dashed transition-all ${
+                                        activeInputBlock === block.id ? "border-current opacity-100" : "border-current/20 opacity-30 hover:opacity-100"
+                                      }`}>
+                                        <input 
+                                          type="text" 
+                                          value={activeInputBlock === block.id ? newTaskText : ""} 
+                                          onChange={(e) => {
+                                            setActiveInputBlock(block.id)
+                                            setNewTaskText(e.target.value)
+                                          }}
+                                          onKeyDown={(e) => e.key === "Enter" && handleAddTask(block.activity_name)}
+                                          placeholder="REFORZAR PROTOCOLO..." 
+                                          className="flex-1 bg-transparent px-2 py-1 text-xs font-black uppercase tracking-widest focus:outline-none placeholder:text-current opacity-70"
+                                        />
+                                        <button 
+                                          onClick={() => handleAddTask(block.activity_name)} 
+                                          className={`p-2 rounded-lg transition-all flex-shrink-0 ${
+                                            block.category.includes('Mañana') ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-white' :
+                                            (block.category.includes('Bloque') || block.category.includes('Trabajo')) ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white' :
+                                            block.category.includes('Tarde') ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white' :
+                                            'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white'
+                                          } flex items-center justify-center`}
+                                        >
+                                          <Plus className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>)}
                           </div>
                         </div>
-                      </div>
                     </motion.div>
 
                     {/* Formulario de inyección inline debajo del bloque */}
@@ -3870,30 +4414,7 @@ function DemonAltar({ theme }: { theme: string }) {
             .eq('user_id', user.id)
           if (refreshed) setStreaks(refreshed)
         } else {
-          // Si el usuario quiere empezar hoy de cero pero la racha está en 1, 
-          // realizamos un auto-reset a 0 para corregir el desajuste de inicio.
-          let needUpdate = false
-          const updatedData = await Promise.all(data.map(async (d) => {
-            if (d.streak_days === 1) {
-              needUpdate = true
-              await supabase
-                .from('demon_streaks')
-                .update({ 
-                  streak_days: 0, 
-                  last_broken_at: null,
-                  updated_at: new Date(Date.now() - 86400000 * 2).toISOString()
-                })
-                .eq('id', d.id)
-              return { ...d, streak_days: 0, last_broken_at: null }
-            }
-            return d
-          }))
-          
-          if (needUpdate) {
-            setStreaks(updatedData)
-          } else {
-            setStreaks(data)
-          }
+          setStreaks(data)
         }
       }
     } catch (err) {
