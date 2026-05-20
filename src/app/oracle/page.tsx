@@ -140,7 +140,7 @@ const renderMarkdown = (text: string, theme: string) => {
       const content = trimmed.substring(3)
       return (
         <h2 key={idx} className={`text-[11px] font-black uppercase tracking-wider mt-5 mb-2 ${
-          theme === 'dark' ? 'text-indigo-400' : theme === 'solarized' ? 'text-orange-850' : 'text-indigo-600'
+          theme === 'dark' ? 'text-indigo-400' : theme === 'solarized' ? 'text-orange-900' : 'text-indigo-600'
         }`}>
           {parseInlines(content, theme)}
         </h2>
@@ -1653,7 +1653,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                   : appTheme === 'dark'
                   ? "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
                   : appTheme === 'solarized'
-                  ? "bg-orange-50 border-orange-200 text-orange-850 hover:bg-orange-100"
+                  ? "bg-orange-50 border-orange-200 text-orange-900 hover:bg-orange-100"
                   : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
               }`}
               title={showChallenges ? "Ocultar Forja de Desafíos" : "Mostrar Forja de Desafíos"}
@@ -1667,7 +1667,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 appTheme === 'dark'
                   ? 'bg-white/5 border-white/5 text-cyan-400'
                   : appTheme === 'solarized'
-                  ? 'bg-orange-100/50 border-orange-200/50 text-orange-850 shadow-sm'
+                  ? 'bg-orange-100/50 border-orange-200/50 text-orange-900 shadow-sm'
                   : 'bg-slate-50 border-slate-200/60 text-cyan-700 shadow-sm'
               }`}>
                 <Calendar className="w-3.5 h-3.5 text-current opacity-80" />
@@ -1732,19 +1732,19 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                 ? performancePactData.isGoalAchieved 
                   ? appTheme === 'dark' 
                     ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" 
-                    : "bg-emerald-250 border-emerald-400 text-emerald-850"
+                    : "bg-emerald-200 border-emerald-400 text-emerald-900"
                   : appTheme === 'dark'
                   ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
-                  : "bg-amber-200 border-amber-400 text-amber-850"
+                  : "bg-amber-200 border-amber-400 text-amber-900"
                 : performancePactData.isGoalAchieved 
                 ? appTheme === 'dark'
                   ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400" 
-                  : "bg-cyan-200 border-cyan-400 text-cyan-850"
+                  : "bg-cyan-200 border-cyan-400 text-cyan-900"
                 : appTheme === 'dark'
                 ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
                 : appTheme === 'solarized'
                 ? "bg-orange-200 border-orange-400 text-orange-900"
-                : "bg-slate-200 border-slate-350 text-slate-700"
+                : "bg-slate-200 border-slate-300 text-slate-700"
             }`}>
               <Trophy className="w-8 h-8" />
             </div>
@@ -1836,7 +1836,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                           ? 'bg-black/40 text-slate-300 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
                           : appTheme === 'solarized'
                           ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-400'
-                          : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-450'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
                       }`}
                     />
                   </motion.div>
@@ -1849,7 +1849,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     appTheme === 'dark'
                       ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
                       : appTheme === 'solarized'
-                      ? 'bg-orange-100/50 border-orange-300/40 text-orange-850 hover:bg-orange-200/50'
+                      ? 'bg-orange-100/50 border-orange-300/40 text-orange-900 hover:bg-orange-200/50'
                       : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
                   }`}
                   title="Añadir nota emocional"
@@ -2248,7 +2248,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                             ? "text-amber-400 border-amber-500/30 bg-black/40"
                             : appTheme === 'solarized'
                             ? "text-orange-950 border-orange-300 bg-orange-100"
-                            : "text-slate-800 border-slate-350 bg-slate-100"
+                            : "text-slate-800 border-slate-300 bg-slate-100"
                         }`}>
                           {countdownText}
                         </span>
@@ -2345,9 +2345,9 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                               ? "bg-emerald-100/40 border-emerald-400/50 text-emerald-950"
                               : "bg-emerald-50 border-emerald-300 text-emerald-900"
                             : appTheme === 'dark'
-                            ? "bg-black/30 border-white/5 hover:border-white/10 hover:bg-black/50 text-slate-350"
+                            ? "bg-black/30 border-white/5 hover:border-white/10 hover:bg-black/50 text-slate-300"
                             : appTheme === 'solarized'
-                            ? "bg-orange-100/30 border-orange-200 hover:border-orange-355 hover:bg-orange-100/50 text-orange-950"
+                            ? "bg-orange-100/30 border-orange-200 hover:border-orange-400 hover:bg-orange-100/50 text-orange-950"
                             : "bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100/80 text-slate-700"
                         }`}
                       >
@@ -2878,7 +2878,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">
                       Reflexión del Guerrero
                     </span>
-                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 italic text-slate-350 text-xs md:text-sm leading-relaxed min-h-[120px] flex flex-col justify-between">
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 italic text-slate-300 text-xs md:text-sm leading-relaxed min-h-[120px] flex flex-col justify-between">
                       <p className="opacity-90">
                         "{selectedPastDay.scoreRow?.emotional_note || "Sin bitácora emocional para esta fecha."}"
                       </p>
@@ -2904,7 +2904,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">
                       Registro de Recompensas
                     </span>
-                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 text-slate-350 text-xs flex flex-col gap-3 justify-center min-h-[120px]">
+                    <div className="bg-black/30 border border-white/5 rounded-2xl p-4 text-slate-300 text-xs flex flex-col gap-3 justify-center min-h-[120px]">
                       <div className="flex items-center justify-between border-b border-white/5 pb-2">
                         <span className="font-semibold uppercase text-slate-400">PKD Ganados</span>
                         <span className="font-black text-cyan-400 uppercase tracking-widest text-sm">
@@ -2913,7 +2913,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       </div>
                       <div className="flex items-center justify-between border-b border-white/5 pb-2">
                         <span className="font-semibold uppercase text-slate-400">Estado del Demonio</span>
-                        <span className={`font-black uppercase tracking-widest ${selectedPastDay.scoreRow?.demon_roto ? "text-rose-450" : "text-emerald-450"}`}>
+                        <span className={`font-black uppercase tracking-widest ${selectedPastDay.scoreRow?.demon_roto ? "text-rose-400" : "text-emerald-400"}`}>
                           {selectedPastDay.scoreRow?.demon_roto ? "Quiebre/Roto 🔴" : "Templanza Mantenida 🛡️"}
                         </span>
                       </div>
@@ -2940,7 +2940,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                             <div key={block.id} className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
                               <div className="flex items-center gap-2 truncate">
                                 <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                                <span className="truncate uppercase font-semibold text-slate-350">{block.activity_name}</span>
+                                <span className="truncate uppercase font-semibold text-slate-300">{block.activity_name}</span>
                               </div>
                               {isChecked ? (
                                 <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">COM</span>
@@ -3076,7 +3076,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                           isCompleted ? "bg-emerald-500 border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.8)]" : 
                           isActive ? `${bTheme.accent} border-white shadow-[0_0_40px_rgba(34,211,238,0.8)]` : 
                           appTheme === 'dark' ? "bg-transparent border-slate-700" :
-                          appTheme === 'solarized' ? "bg-transparent border-orange-350" : "bg-transparent border-slate-350"
+                          appTheme === 'solarized' ? "bg-transparent border-orange-300" : "bg-transparent border-slate-300"
                         }`}>
                           {isCompleted && <CheckCircle2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-white" />}
                         </div>
@@ -3146,7 +3146,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                       ? 'bg-white/5 hover:bg-white/10 hover:text-cyan-400 text-slate-400'
                                       : appTheme === 'solarized'
                                       ? 'bg-orange-200/50 hover:bg-orange-200 hover:text-orange-900 text-orange-950'
-                                      : 'bg-slate-250 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
+                                      : 'bg-slate-200 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
                                   }`}
                                   title="Subir Bloque (Intercambiar Horas)"
                                 >
@@ -3163,7 +3163,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                       ? 'bg-white/5 hover:bg-white/10 hover:text-cyan-400 text-slate-400'
                                       : appTheme === 'solarized'
                                       ? 'bg-orange-200/50 hover:bg-orange-200 hover:text-orange-900 text-orange-950'
-                                      : 'bg-slate-250 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
+                                      : 'bg-slate-200 hover:bg-slate-300 hover:text-slate-900 text-slate-700'
                                   }`}
                                   title="Bajar Bloque (Intercambiar Horas)"
                                 >
@@ -3172,7 +3172,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   </svg>
                                 </button>
 
-                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-350/50' : 'bg-slate-350'}`} />
+                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-300/50' : 'bg-slate-300'}`} />
 
                                 <button
                                   onClick={() => handleMakeBlockUniversal(block)}
@@ -3190,7 +3190,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   <span className="text-[8px] font-black uppercase tracking-widest hidden sm:inline">Hacer Universal</span>
                                 </button>
 
-                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-350/50' : 'bg-slate-350'}`} />
+                                <div className={`h-4 w-px mx-1 ${appTheme === 'dark' ? 'bg-white/10' : appTheme === 'solarized' ? 'bg-orange-300/50' : 'bg-slate-300'}`} />
 
                                 <button
                                   onClick={() => handleStartInsertBelow(block)}
@@ -3691,7 +3691,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   appTheme === 'dark'
                                     ? 'bg-black/60 text-slate-100 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
                                     : appTheme === 'solarized'
-                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-450'
+                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-900'
                                     : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
                                 }`}
                               />
@@ -3760,7 +3760,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                                   appTheme === 'dark'
                                     ? 'bg-black/60 text-slate-100 border-white/10 focus:border-cyan-500 placeholder:text-slate-600'
                                     : appTheme === 'solarized'
-                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-450'
+                                    ? 'bg-orange-50 text-orange-950 border-orange-300 focus:border-orange-500 placeholder:text-orange-900'
                                     : 'bg-slate-100 text-slate-800 border-slate-200 focus:border-cyan-500 placeholder:text-slate-400'
                                 }`}
                               />
@@ -4087,7 +4087,7 @@ function ProtocolConsole({ theme: appTheme }: { theme: string }) {
                       appTheme === 'dark'
                         ? 'border-white/10 hover:border-white/20 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200'
                         : appTheme === 'solarized'
-                        ? 'border-orange-200 hover:border-orange-300 bg-orange-100 hover:bg-orange-200 text-orange-850 hover:text-orange-950'
+                        ? 'border-orange-200 hover:border-orange-300 bg-orange-100 hover:bg-orange-200 text-orange-900 hover:text-orange-950'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'
                     }`}
                   >

@@ -40,6 +40,7 @@ interface UserStatus {
     ether_battery: number
     trading_locked_until: string | null
     is_onboarding_completed: boolean
+    last_pokemon_gift_at: string | null
 }
 
 interface PerfilVida {

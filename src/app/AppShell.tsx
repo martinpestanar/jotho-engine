@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { motion } from "framer-motion"
 import { EmulatorCanvas } from "@/features/emulator"
 import { useGameStore } from "@/features/game"
-import { HabitTracker, useHabitStore } from "@/features/habits"
+import { useHabitStore } from "@/features/habits"
 import { useCloudSave } from "@/features/cloudsave/useCloudSave"
 import { EconomyStatusWidget } from "@/features/market/components/EconomyStatusWidget"
 import { Play, Pause, RotateCcw, Gamepad2, ChevronLeft, Clock, Sparkles, CloudUpload, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
@@ -367,8 +367,6 @@ export default function AppShell() {
               showPrices={false}
               className="mb-4 rounded-3xl"
             />
-
-            <HabitTracker />
           </aside>
         )}
       </main>

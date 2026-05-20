@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import BackpackDashboard from "@/components/dashboard/BackpackDashboard"
 import { TransferBox } from "@/features/dashboard/components/TransferBox"
+import ShinyGiftWidget from "@/components/dashboard/ShinyGiftWidget"
 
 import LootModal from "@/components/modals/LootModal"
 
@@ -473,6 +474,9 @@ export default function DashboardPage() {
               ))}
             </div>
           </motion.div>
+
+          {/* REGALO SHINY MENSUAL */}
+          {userId && <ShinyGiftWidget userId={userId} />}
 
           <motion.div {...spr} transition={{ ...spr.transition, delay: 0.32 }} className="bg-slate-900 rounded-3xl p-6 shadow-xl border-b-4 border-slate-950">
             {userId && <TransferBox userId={userId} />}

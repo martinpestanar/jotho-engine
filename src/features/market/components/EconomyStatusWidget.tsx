@@ -21,39 +21,39 @@ const ESTADO_CONFIG: Record<EstadoEconomia, {
 }> = {
   BOOM: {
     label: 'BOOM',
-    color: '#00ff88',
-    bg: 'rgba(0, 255, 136, 0.08)',
-    border: 'rgba(0, 255, 136, 0.3)',
-    glow: '0 0 20px rgba(0, 255, 136, 0.2)',
+    color: '#059669',
+    bg: 'rgba(16, 185, 129, 0.08)',
+    border: 'rgba(16, 185, 129, 0.2)',
+    glow: '0 0 20px rgba(16, 185, 129, 0.05)',
     icon: '📈',
-    barColor: '#00ff88',
+    barColor: '#059669',
   },
   ESTABLE: {
     label: 'ESTABLE',
-    color: '#60a5fa',
-    bg: 'rgba(96, 165, 250, 0.08)',
-    border: 'rgba(96, 165, 250, 0.3)',
-    glow: '0 0 20px rgba(96, 165, 250, 0.15)',
+    color: '#1d4ed8',
+    bg: 'rgba(37, 99, 235, 0.08)',
+    border: 'rgba(37, 99, 235, 0.2)',
+    glow: '0 0 20px rgba(37, 99, 235, 0.05)',
     icon: '⚖️',
-    barColor: '#60a5fa',
+    barColor: '#1d4ed8',
   },
   RECESION: {
     label: 'RECESIÓN',
-    color: '#fbbf24',
-    bg: 'rgba(251, 191, 36, 0.08)',
-    border: 'rgba(251, 191, 36, 0.3)',
-    glow: '0 0 20px rgba(251, 191, 36, 0.2)',
+    color: '#b45309',
+    bg: 'rgba(217, 119, 6, 0.08)',
+    border: 'rgba(217, 119, 6, 0.2)',
+    glow: '0 0 20px rgba(217, 119, 6, 0.05)',
     icon: '📉',
-    barColor: '#fbbf24',
+    barColor: '#b45309',
   },
   CRISIS: {
     label: '⚠️ CRISIS',
-    color: '#ef4444',
-    bg: 'rgba(239, 68, 68, 0.1)',
-    border: 'rgba(239, 68, 68, 0.4)',
-    glow: '0 0 24px rgba(239, 68, 68, 0.3)',
+    color: '#b91c1c',
+    bg: 'rgba(220, 38, 38, 0.08)',
+    border: 'rgba(220, 38, 38, 0.2)',
+    glow: '0 0 24px rgba(220, 38, 38, 0.08)',
     icon: '🚨',
-    barColor: '#ef4444',
+    barColor: '#b91c1c',
   },
 }
 
@@ -69,7 +69,7 @@ function IndiceBar({ indice, estado }: { indice: number; estado: EstadoEconomia 
     <div style={{ marginTop: 8 }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 4, fontSize: 11, color: 'rgba(255,255,255,0.5)',
+        marginBottom: 4, fontSize: 11, color: 'rgba(15, 23, 42, 0.5)',
       }}>
         <span>BOOM 0.5×</span>
         <span style={{ color: cfg.color, fontWeight: 700, fontSize: 13 }}>
@@ -78,12 +78,12 @@ function IndiceBar({ indice, estado }: { indice: number; estado: EstadoEconomia 
         <span>CRISIS 3.0×</span>
       </div>
       <div style={{
-        height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden',
+        height: 6, background: 'rgba(15, 23, 42, 0.08)', borderRadius: 3, overflow: 'hidden',
       }}>
         <div style={{
           height: '100%',
           width: `${pct}%`,
-          background: `linear-gradient(90deg, #00ff88, ${cfg.barColor})`,
+          background: `linear-gradient(90deg, #10b981, ${cfg.barColor})`,
           borderRadius: 3,
           transition: 'width 1s ease',
           boxShadow: `0 0 8px ${cfg.barColor}`,
@@ -110,7 +110,7 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
       <div style={styles.container} className={className}>
         <div style={styles.loadingRow}>
           <span style={styles.pulse}>●</span>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+          <span style={{ color: 'rgba(15,23,42,0.45)', fontSize: 12 }}>
             Leyendo mercado Johto...
           </span>
         </div>
@@ -120,8 +120,8 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
 
   if (error && !economia) {
     return (
-      <div style={{ ...styles.container, borderColor: 'rgba(239,68,68,0.3)' }} className={className}>
-        <span style={{ color: '#ef4444', fontSize: 12 }}>⚠️ {error}</span>
+      <div style={{ ...styles.container, borderColor: 'rgba(220,38,38,0.3)' }} className={className}>
+        <span style={{ color: '#b91c1c', fontSize: 12 }}>⚠️ {error}</span>
       </div>
     )
   }
@@ -143,7 +143,7 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 18 }}>{cfg.icon}</span>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(15,23,42,0.45)', textTransform: 'uppercase' }}>
               Economía de Johto
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: cfg.color }}>
@@ -152,10 +152,10 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>Var. promedio</div>
+          <div style={{ fontSize: 9, color: 'rgba(15,23,42,0.4)' }}>Var. promedio</div>
           <div style={{
             fontSize: 13, fontWeight: 700,
-            color: economia.variacion_promedio >= 0 ? '#00ff88' : '#ef4444',
+            color: economia.variacion_promedio >= 0 ? '#059669' : '#b91c1c',
           }}>
             {economia.variacion_promedio >= 0 ? '+' : ''}
             {economia.variacion_promedio.toFixed(2)}%
@@ -172,19 +172,19 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
       {/* Stats rápidos */}
       <div style={styles.statsRow}>
         <div style={styles.statChip}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>Empresas en crisis</span>
-          <span style={{ color: economia.empresas_en_crisis > 0 ? '#ef4444' : '#00ff88', fontWeight: 700 }}>
+          <span style={{ color: 'rgba(15,23,42,0.5)', fontSize: 10 }}>Empresas en crisis</span>
+          <span style={{ color: economia.empresas_en_crisis > 0 ? '#b91c1c' : '#059669', fontWeight: 700 }}>
             {economia.empresas_en_crisis}
           </span>
         </div>
         <div style={styles.statChip}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>Pago NPCs</span>
-          <span style={{ color: '#60a5fa', fontWeight: 700 }}>
+          <span style={{ color: 'rgba(15,23,42,0.5)', fontSize: 10 }}>Pago NPCs</span>
+          <span style={{ color: '#1d4ed8', fontWeight: 700 }}>
             ×{economia.multiplicador_npc.toFixed(1)}
           </span>
         </div>
         <div style={styles.statChip}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>Inflación tiendas</span>
+          <span style={{ color: 'rgba(15,23,42,0.5)', fontSize: 10 }}>Inflación tiendas</span>
           <span style={{ color: cfg.color, fontWeight: 700 }}>
             ×{economia.indice.toFixed(2)}
           </span>
@@ -203,12 +203,12 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
             .filter(p => p.precio > 0)
             .map(p => (
               <div key={p.id_gba} style={styles.priceRow}>
-                <span style={{ color: 'rgba(255,255,255,0.8)' }}>{p.nombre}</span>
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <span style={{ color: 'rgba(15,23,42,0.85)' }}>{p.nombre}</span>
+                <span style={{ color: 'rgba(15,23,42,0.45)' }}>
                   {p.precio_base.toLocaleString()} PKD
                 </span>
                 <span style={{
-                  color: p.precio > p.precio_base ? '#ef4444' : p.precio < p.precio_base ? '#00ff88' : 'rgba(255,255,255,0.6)',
+                  color: p.precio > p.precio_base ? '#b91c1c' : p.precio < p.precio_base ? '#059669' : 'rgba(15,23,42,0.6)',
                   fontWeight: p.precio !== p.precio_base ? 700 : 400,
                 }}>
                   {p.precio.toLocaleString()} PKD
@@ -220,7 +220,7 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
 
       {/* Footer: estado del RAM patch */}
       <div style={styles.footer}>
-        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>
+        <span style={{ color: 'rgba(15,23,42,0.4)', fontSize: 10 }}>
           {lastPatchedAt
             ? `🎮 RAM parchada ${lastPatchedAt.toLocaleTimeString()}`
             : '🎮 Esperando emulador...'}
@@ -242,8 +242,8 @@ export function EconomyStatusWidget({ showPrices = false, className }: EconomySt
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    background: 'rgba(96,165,250,0.06)',
-    border: '1px solid rgba(96,165,250,0.2)',
+    background: 'rgba(37,99,235,0.06)',
+    border: '1px solid rgba(37,99,235,0.2)',
     borderRadius: 12,
     padding: '14px 16px',
     display: 'flex',
@@ -256,32 +256,32 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex', alignItems: 'center', gap: 8,
   },
   pulse: {
-    color: '#60a5fa',
+    color: '#2563eb',
     animation: 'pulse 1.5s ease-in-out infinite',
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
   },
   descripcion: {
-    margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4,
+    margin: 0, fontSize: 12, color: 'rgba(15,23,42,0.7)', lineHeight: 1.4,
   },
   statsRow: {
     display: 'flex', gap: 8,
   },
   statChip: {
-    flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '6px 10px',
+    flex: 1, background: 'rgba(15,23,42,0.03)', borderRadius: 8, padding: '6px 10px',
     display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center',
-    border: '1px solid rgba(255,255,255,0.06)',
+    border: '1px solid rgba(15,23,42,0.06)',
   },
   priceTable: {
-    background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 10px',
+    background: 'rgba(15,23,42,0.03)', borderRadius: 8, padding: '8px 10px',
     display: 'flex', flexDirection: 'column', gap: 4,
   },
   priceHeader: {
     display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 16,
-    fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: 1,
+    fontSize: 10, color: 'rgba(15,23,42,0.45)', letterSpacing: 1,
     textTransform: 'uppercase', marginBottom: 4, paddingBottom: 4,
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid rgba(15,23,42,0.06)',
   },
   priceRow: {
     display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 16,
@@ -292,9 +292,9 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 2,
   },
   patchBtn: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    color: 'rgba(255,255,255,0.6)',
+    background: 'rgba(15,23,42,0.04)',
+    border: '1px solid rgba(15,23,42,0.1)',
+    color: 'rgba(15,23,42,0.65)',
     borderRadius: 6,
     padding: '3px 10px',
     fontSize: 10,
