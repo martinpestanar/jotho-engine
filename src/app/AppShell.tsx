@@ -200,7 +200,7 @@ export default function AppShell() {
             <p className="text-[10px] text-slate-400 font-mono">{GAME.CURRENCY_SYMBOL} {pkdBalance.toLocaleString()}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2">
           <button onClick={() => setShowHabits(!showHabits)} className={cn("text-xs h-8 px-3 rounded-full border transition-all", showHabits ? "bg-joycon-cyan/10 border-joycon-cyan/30 text-joycon-cyan" : "bg-white border-slate-200 text-slate-400 hover:border-slate-300")}>
             <Gamepad2 className="w-3.5 h-3.5 mr-1 inline" />
             {showHabits ? "Habits" : "Console"}
@@ -211,7 +211,7 @@ export default function AppShell() {
       {/* — Main — */}
       <main className="flex flex-1 overflow-hidden">
         {/* — Game Boy Console Area — */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-6 lg:p-8 overflow-y-auto">
           {/* Atomic Purple Shell */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -313,7 +313,7 @@ export default function AppShell() {
 
         {/* — Habits Panel — */}
         {showHabits && (
-          <aside className="w-full lg:w-[380px] border-l border-slate-200 bg-white/50 backdrop-blur-sm overflow-y-auto p-4 sm:p-5">
+          <aside className="hidden lg:block lg:w-[380px] border-l border-slate-200 bg-white/50 backdrop-blur-sm overflow-y-auto p-4 sm:p-5">
             {/* Play time card */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 mb-4">
               <div className="flex items-center justify-between mb-1">
