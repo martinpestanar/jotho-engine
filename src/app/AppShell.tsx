@@ -209,20 +209,20 @@ export default function AppShell() {
       </header>
 
       {/* — Main — */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden bg-black sm:bg-transparent">
         {/* — Game Boy Console Area — */}
-        <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-6 lg:p-8 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center p-0 sm:p-6 lg:p-8 overflow-y-auto w-full h-full">
           {/* Atomic Purple Shell */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 16 }}
-            className="relative w-full max-w-[700px] bg-gradient-to-br from-purple-500/20 via-purple-400/15 to-purple-300/20 backdrop-blur-xl border border-purple-300/40 rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl shadow-purple-500/10 p-5 sm:p-7"
+            className="relative w-full h-full sm:h-auto sm:max-w-[700px] sm:bg-gradient-to-br sm:from-purple-500/20 sm:via-purple-400/15 sm:to-purple-300/20 sm:backdrop-blur-xl sm:border sm:border-purple-300/40 sm:rounded-[3rem] sm:shadow-2xl sm:shadow-purple-500/10 p-0 sm:p-7 flex flex-col"
           >
             {/* Screen Bezel */}
-            <div className="bg-slate-900 rounded-2xl sm:rounded-3xl p-2 sm:p-3 shadow-inner shadow-black/30">
+            <div className="w-full sm:bg-slate-900 sm:rounded-3xl p-0 sm:p-3 sm:shadow-inner sm:shadow-black/30 flex flex-col items-center justify-center">
               {/* Emulator */}
-              <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-black/40">
+              <div className="w-full max-h-[80dvh] sm:rounded-2xl overflow-hidden bg-black flex flex-col items-center justify-center">
                 <EmulatorCanvas
                   romUrl={romUrl ?? undefined}
                   externalFiles={externalFiles}
@@ -233,7 +233,7 @@ export default function AppShell() {
             </div>
 
             {/* Bezel label */}
-            <div className="flex items-center justify-between mt-3 px-1">
+            <div className="hidden sm:flex items-center justify-between mt-3 px-1">
               <span className="text-[9px] tracking-[0.2em] text-purple-600/50 font-semibold uppercase">LifeSync Color</span>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-plant-green" />
@@ -242,7 +242,7 @@ export default function AppShell() {
             </div>
 
             {/* Decorative D-Pad + A/B */}
-            <div className="flex items-center justify-between mt-5 px-2 sm:px-4">
+            <div className="hidden sm:flex items-center justify-between mt-5 px-2 sm:px-4">
               {/* D-Pad */}
               <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 rounded-sm shadow-inner" />

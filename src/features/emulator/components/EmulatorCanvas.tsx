@@ -61,7 +61,7 @@ export default function EmulatorCanvas({
   }
 
   return (
-    <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-2xl shadow-black/50 bg-black">
+    <div className="relative w-full aspect-[3/2] sm:rounded-lg overflow-hidden sm:shadow-2xl sm:shadow-black/50 bg-black">
       <EJS
         EJS_core={config?.EJS_core ?? EMULATOR.CORE}
         EJS_gameUrl={romUrl}
@@ -76,7 +76,6 @@ export default function EmulatorCanvas({
         EJS_externalFiles={externalFiles}
         EJS_fixedSaveInterval={5}
         EJS_Buttons={{ gamepad: false, fullscreen: false }}
-        {...({ EJS_virtualGamepad: false } as any)}
       />
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-black/70 backdrop-blur-sm pointer-events-none z-10">
         <span className="text-xs font-mono text-emerald-400">
